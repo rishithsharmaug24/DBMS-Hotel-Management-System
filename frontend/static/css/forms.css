@@ -1,0 +1,6 @@
+/* forms.css - clean form styles */
+.form-row{display:flex;gap:12px}
+.form-row .field{flex:1}
+label.required::after{content:" *";color:var(--danger)}
+.input-help{font-size:13px;color:var(--muted);margin-top:6px}
+.form-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:12px}

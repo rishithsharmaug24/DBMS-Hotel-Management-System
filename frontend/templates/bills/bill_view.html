@@ -1,0 +1,33 @@
+<!doctype html><html><head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Bills — LuxeStay</title>
+  <link rel="stylesheet" href="../static/css/style.css">
+</head><body>
+  <div id="include-navbar"></div>
+  <div class="container app-grid">
+    <div id="include-sidebar"></div>
+    <main class="main-panel">
+      <div class="card">
+        <h2>Recent Bills</h2>
+        <table class="table">
+          <thead><tr><th>Bill ID</th><th>Booking</th><th>Guest</th><th>Total</th><th>Date</th><th></th></tr></thead>
+          <tbody id="bills_tbody"></tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // demo list
+    const demo = [
+      { id:'INV-1001', booking:'B-3232', guest:'Aarav', total:'₹8,320', date:'2025-10-28' },
+      { id:'INV-1000', booking:'B-3111', guest:'Maya', total:'₹4,800', date:'2025-10-24' }
+    ];
+    const tbody = document.getElementById('bills_tbody');
+    demo.forEach(b => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${b.id}</td><td>${b.booking}</td><td>${b.guest}</td><td>${b.total}</td><td>${b.date}</td><td><a href="bill_view.html?id=${b.id}">View</a></td>`;
+      tbody.appendChild(tr);
+    });
+  </script>
+</body></html>

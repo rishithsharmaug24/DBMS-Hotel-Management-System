@@ -1,0 +1,491 @@
+{% extends "base.html" %}
+
+{% block title %}Search Guest - Hotel Management System{% endblock %}
+
+{% block page_icon %}<i class="fas fa-search"></i>{% endblock %}
+{% block page_title %}Guest Search{% endblock %}
+{% block page_subtitle %}
+  Find and filter guests by multiple criteria
+{% endblock %}
+
+{% block breadcrumb %}
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
+    <li class="breadcrumb-item"><a href="/guests">Guests</a></li>
+    <li class="breadcrumb-item active">Search</li>
+  </ol>
+{% endblock %}
+
+{% block content %}
+
+<!-- Search Form Card -->
+<div class="card shadow mb-4">
+  <div class="card-header bg-primary text-white">
+    <h5 class="mb-0"><i class="fas fa-filter"></i> Advanced Search & Filter</h5>
+  </div>
+  <div class="card-body">
+    <form id="searchForm" method="GET" action="/api/guests/search" onsubmit="performSearch(event)">
+      
+      <!-- Main Search Row -->
+      <div class="row mb-3">
+        <div class="col-lg-8">
+          <label class="form-label">Search Query</label>
+          <div class="input-group input-group-lg">
+            <input 
+              type="text" 
+              class="form-control" 
+              id="searchQuery" 
+              name="query"
+              placeholder="Search by name, email, phone, or guest ID..."
+              autocomplete="off">
+            <button class="btn btn-primary" type="submit">
+              <i class="fas fa-search"></i> Search
+            </button>
+            <button class="btn btn-outline-secondary" type="button" onclick="clearSearch()">
+              <i class="fas fa-redo"></i> Clear
+            </button>
+          </div>
+          <small class="form-text text-muted">
+            Type at least 2 characters to search
+          </small>
+        </div>
+        <div class="col-lg-4">
+          <label class="form-label">Search Type</label>
+          <select class="form-select" id="searchType" name="search_type">
+            <option value="all">All Fields</option>
+            <option value="name">Name Only</option>
+            <option value="email">Email Only</option>
+            <option value="phone">Phone Only</option>
+            <option value="guest_id">Guest ID Only</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Advanced Filters Row 1 -->
+      <div class="row mb-3">
+        <div class="col-md-3">
+          <label class="form-label">City</label>
+          <select class="form-select" id="filterCity" name="city">
+            <option value="">-- All Cities --</option>
+            <option value="Delhi">Delhi</option>
+            <option value="Mumbai">Mumbai</option>
+            <option value="Bangalore">Bangalore</option>
+            <option value="Hyderabad">Hyderabad</option>
+            <option value="Chennai">Chennai</option>
+            <option value="Kolkata">Kolkata</option>
+            <option value="Pune">Pune</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">ID Proof Type</label>
+          <select class="form-select" id="filterIdType" name="id_proof_type">
+            <option value="">-- All Types --</option>
+            <option value="Aadhar">Aadhar Card</option>
+            <option value="Passport">Passport</option>
+            <option value="DrivingLicense">Driving License</option>
+            <option value="VoterID">Voter ID</option>
+            <option value="PAN">PAN Card</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Gender</label>
+          <select class="form-select" id="filterGender" name="gender">
+            <option value="">-- All Genders --</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Registration Period</label>
+          <select class="form-select" id="filterPeriod" name="period">
+            <option value="">-- All Time --</option>
+            <option value="today">Today</option>
+            <option value="week">This Week</option>
+            <option value="month">This Month</option>
+            <option value="quarter">This Quarter</option>
+            <option value="year">This Year</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Advanced Filters Row 2 -->
+      <div class="row mb-3">
+        <div class="col-md-3">
+          <label class="form-label">Bookings (Min)</label>
+          <input type="number" class="form-control" id="minBookings" name="min_bookings" placeholder="0" min="0">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Bookings (Max)</label>
+          <input type="number" class="form-control" id="maxBookings" name="max_bookings" placeholder="100" min="0">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Active Bookings Only</label>
+          <div class="form-check mt-2">
+            <input class="form-check-input" type="checkbox" id="activeOnly" name="active_only" value="yes">
+            <label class="form-check-label" for="activeOnly">
+              Show guests with active bookings
+            </label>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Verify ID Status</label>
+          <select class="form-select" id="filterIdStatus" name="id_status">
+            <option value="">-- All --</option>
+            <option value="valid">Valid ID</option>
+            <option value="expired">Expired ID</option>
+            <option value="verified">Verified</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Sort & Display Options -->
+      <div class="row mb-3">
+        <div class="col-md-3">
+          <label class="form-label">Sort By</label>
+          <select class="form-select" id="sortBy" name="sort_by">
+            <option value="recent">Recently Added</option>
+            <option value="name">Name (A-Z)</option>
+            <option value="bookings">Most Bookings</option>
+            <option value="spent">Most Spent</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Results Per Page</label>
+          <select class="form-select" id="pageSize" name="page_size">
+            <option value="10">10 per page</option>
+            <option value="25">25 per page</option>
+            <option value="50">50 per page</option>
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">&nbsp;</label>
+          <div>
+            <button type="submit" class="btn btn-success me-2">
+              <i class="fas fa-search"></i> Apply Filters
+            </button>
+            <button type="reset" class="btn btn-outline-secondary" onclick="resetAllFilters()">
+              <i class="fas fa-times"></i> Reset All
+            </button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Quick Filter Chips -->
+<div class="mb-4">
+  <h6 class="text-muted mb-2">Quick Filters:</h6>
+  <div class="d-flex flex-wrap gap-2">
+    <button class="btn btn-sm btn-outline-primary" onclick="quickFilter('today')">
+      <i class="fas fa-calendar-today"></i> Today's Guests
+    </button>
+    <button class="btn btn-sm btn-outline-info" onclick="quickFilter('week')">
+      <i class="fas fa-calendar"></i> This Week
+    </button>
+    <button class="btn btn-sm btn-outline-success" onclick="quickFilter('active')">
+      <i class="fas fa-check-circle"></i> Active Bookings
+    </button>
+    <button class="btn btn-sm btn-outline-warning" onclick="quickFilter('vip')">
+      <i class="fas fa-star"></i> VIP Guests (5+ bookings)
+    </button>
+    <button class="btn btn-sm btn-outline-danger" onclick="quickFilter('expired_id')">
+      <i class="fas fa-exclamation-circle"></i> Expired IDs
+    </button>
+  </div>
+</div>
+
+<!-- Search Results Section -->
+<div id="resultsSection" style="display: none;">
+  
+  <!-- Results Header -->
+  <div class="card shadow mb-4">
+    <div class="card-body d-flex justify-content-between align-items-center">
+      <div>
+        <h5 class="mb-0">
+          <i class="fas fa-list"></i> Search Results
+          <span class="badge bg-primary" id="resultCount">0</span>
+        </h5>
+      </div>
+      <div>
+        <button class="btn btn-sm btn-outline-secondary" onclick="exportResults()">
+          <i class="fas fa-download"></i> Export Results
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results Grid -->
+  <div class="row" id="resultsContainer">
+    <!-- Results will be loaded here -->
+  </div>
+
+  <!-- Pagination -->
+  <nav aria-label="Results pagination" id="paginationContainer" style="display: none;">
+    <ul class="pagination justify-content-center">
+      <!-- Pagination will be generated here -->
+    </ul>
+  </nav>
+
+</div>
+
+<!-- No Results Message -->
+<div id="noResultsMessage" class="alert alert-info text-center" style="display: none;">
+  <i class="fas fa-search" style="font-size: 2rem; opacity: 0.3;"></i>
+  <p class="mt-2 mb-0">
+    <strong>No guests found.</strong> Try adjusting your search criteria.
+  </p>
+</div>
+
+<!-- Recent Searches Section -->
+<div class="card shadow mt-4">
+  <div class="card-header bg-secondary text-white">
+    <h5 class="mb-0"><i class="fas fa-history"></i> Recent Searches</h5>
+  </div>
+  <div class="card-body">
+    <div id="recentSearchesList" class="list-group">
+      <!-- Recent searches will be loaded here -->
+    </div>
+    <p id="noRecentSearches" class="text-muted text-center mb-0">No recent searches</p>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const MAX_RECENT_SEARCHES = 5;
+
+  // Perform search
+  function performSearch(event) {
+    event.preventDefault();
+    
+    const query = document.getElementById('searchQuery').value.trim();
+    const formData = new FormData(document.getElementById('searchForm'));
+    
+    // Validate search query
+    if (query.length < 2 && !hasActiveFilters()) {
+      alert('Please enter a search query (minimum 2 characters) or apply filters');
+      return;
+    }
+
+    // Save to recent searches
+    saveRecentSearch(query || 'Advanced Filter');
+
+    // Show loading
+    showLoadingState();
+
+    // Submit form
+    const searchParams = new URLSearchParams(formData);
+    window.location.href = `/api/guests/search?${searchParams.toString()}`;
+  }
+
+  // Check if any filters are active
+  function hasActiveFilters() {
+    const city = document.getElementById('filterCity').value;
+    const idType = document.getElementById('filterIdType').value;
+    const gender = document.getElementById('filterGender').value;
+    const period = document.getElementById('filterPeriod').value;
+    
+    return city || idType || gender || period;
+  }
+
+  // Quick filters
+  function quickFilter(filterType) {
+    clearSearch();
+    
+    if (filterType === 'today') {
+      document.getElementById('filterPeriod').value = 'today';
+    } else if (filterType === 'week') {
+      document.getElementById('filterPeriod').value = 'week';
+    } else if (filterType === 'active') {
+      document.getElementById('activeOnly').checked = true;
+    } else if (filterType === 'vip') {
+      document.getElementById('minBookings').value = '5';
+    } else if (filterType === 'expired_id') {
+      document.getElementById('filterIdStatus').value = 'expired';
+    }
+
+    // Submit form
+    document.getElementById('searchForm').dispatchEvent(new Event('submit'));
+  }
+
+  // Clear search
+  function clearSearch() {
+    document.getElementById('searchQuery').value = '';
+    document.getElementById('searchQuery').focus();
+  }
+
+  // Reset all filters
+  function resetAllFilters() {
+    document.getElementById('searchForm').reset();
+    document.getElementById('resultsSection').style.display = 'none';
+    document.getElementById('noResultsMessage').style.display = 'none';
+  }
+
+  // Show/hide results
+  function showResults(results, totalCount) {
+    document.getElementById('resultCount').textContent = totalCount;
+    document.getElementById('resultsSection').style.display = 'block';
+    document.getElementById('noResultsMessage').style.display = totalCount === 0 ? 'block' : 'none';
+    
+    // Render result cards
+    renderResultCards(results);
+  }
+
+  // Render result cards
+  function renderResultCards(results) {
+    const container = document.getElementById('resultsContainer');
+    container.innerHTML = '';
+
+    results.forEach(guest => {
+      const card = `
+        <div class="col-md-6 col-lg-4 mb-3">
+          <div class="card h-100 shadow-sm hover-card">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <h6 class="card-title mb-0">
+                  <i class="fas fa-user-circle text-primary"></i> ${guest.name}
+                </h6>
+                <span class="badge bg-primary">#${guest.guest_id}</span>
+              </div>
+              
+              <p class="card-text small mb-2">
+                <i class="fas fa-envelope text-muted"></i> <a href="mailto:${guest.email}">${guest.email}</a>
+              </p>
+              
+              <p class="card-text small mb-2">
+                <i class="fas fa-phone text-muted"></i> ${guest.phone || 'N/A'}
+              </p>
+              
+              <p class="card-text small mb-2">
+                <i class="fas fa-map-marker-alt text-muted"></i> ${guest.city || 'N/A'}
+              </p>
+
+              <div class="d-flex gap-2 justify-content-between mt-3">
+                <small class="text-muted">
+                  <strong>${guest.booking_count || 0}</strong> Bookings
+                </small>
+                <small class="text-muted">
+                  ₹<strong>${guest.total_spent || '0'}</strong>
+                </small>
+              </div>
+            </div>
+            <div class="card-footer bg-light">
+              <div class="btn-group btn-group-sm w-100" role="group">
+                <a href="/guests/${guest.guest_id}" class="btn btn-outline-primary">
+                  <i class="fas fa-eye"></i> View
+                </a>
+                <a href="/guests/${guest.guest_id}/edit" class="btn btn-outline-warning">
+                  <i class="fas fa-edit"></i> Edit
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      container.innerHTML += card;
+    });
+  }
+
+  // Show loading state
+  function showLoadingState() {
+    const container = document.getElementById('resultsContainer');
+    container.innerHTML = `
+      <div class="col-12 text-center py-4">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2 text-muted">Searching guests...</p>
+      </div>
+    `;
+    document.getElementById('resultsSection').style.display = 'block';
+  }
+
+  // Export results
+  function exportResults() {
+    const formData = new URLSearchParams(new FormData(document.getElementById('searchForm')));
+    window.location.href = `/api/guests/search/export?${formData.toString()}`;
+  }
+
+  // Recent searches
+  function saveRecentSearch(query) {
+    let searches = JSON.parse(localStorage.getItem('recentGuestSearches') || '[]');
+    
+    // Add new search to top
+    searches.unshift({
+      query: query,
+      timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+    });
+
+    // Keep only last 5
+    searches = searches.slice(0, MAX_RECENT_SEARCHES);
+    
+    localStorage.setItem('recentGuestSearches', JSON.stringify(searches));
+    loadRecentSearches();
+  }
+
+  // Load recent searches
+  function loadRecentSearches() {
+    const searches = JSON.parse(localStorage.getItem('recentGuestSearches') || '[]');
+    const container = document.getElementById('recentSearchesList');
+    const noSearches = document.getElementById('noRecentSearches');
+
+    if (searches.length === 0) {
+      noSearches.style.display = 'block';
+      container.innerHTML = '';
+      return;
+    }
+
+    noSearches.style.display = 'none';
+    container.innerHTML = searches.map((search, index) => `
+      <a href="#" onclick="repeatSearch('${search.query}'); return false;" class="list-group-item list-group-item-action">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <i class="fas fa-history me-2"></i>
+            <strong>${search.query}</strong>
+          </div>
+          <small class="text-muted">${search.timestamp}</small>
+        </div>
+      </a>
+    `).join('');
+  }
+
+  // Repeat search
+  function repeatSearch(query) {
+    document.getElementById('searchQuery').value = query;
+    document.getElementById('searchForm').dispatchEvent(new Event('submit'));
+  }
+
+  // Clear recent searches
+  function clearRecentSearches() {
+    localStorage.removeItem('recentGuestSearches');
+    loadRecentSearches();
+  }
+
+  // Auto-dismiss alerts
+  document.querySelectorAll('.alert').forEach(alert => {
+    setTimeout(() => {
+      alert.style.display = 'none';
+    }, 5000);
+  });
+
+  // Load recent searches on page load
+  loadRecentSearches();
+
+  // Add hover effect to result cards
+  const style = document.createElement('style');
+  style.textContent = `
+    .hover-card {
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .hover-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1) !important;
+    }
+  `;
+  document.head.appendChild(style);
+</script>
+{% endblock %}

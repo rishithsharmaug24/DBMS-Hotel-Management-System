@@ -1,0 +1,78 @@
+<!doctype html>
+<html><head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Generate Bill — LuxeStay</title>
+  <link rel="stylesheet" href="../static/css/style.css">
+  <link rel="stylesheet" href="../static/css/forms.css">
+</head>
+<body>
+  <div id="include-navbar"></div>
+  <div class="container app-grid">
+    <div id="include-sidebar"></div>
+    <main class="main-panel">
+      <div class="card">
+        <h2>Generate Bill</h2>
+        <form id="billForm">
+          <div class="form-row">
+            <div class="field">
+              <label class="required">Booking ID</label>
+              <input id="bill_booking_id" placeholder="B-XXXXX" required>
+            </div>
+            <div class="field">
+              <label class="required">Guest Name</label>
+              <input id="bill_guest" required>
+            </div>
+          </div>
+          <label>Room Charges (per night)</label>
+          <input id="bill_room_rate" type="number" min="0">
+          <label>Service Line Items (JSON)</label>
+          <textarea id="bill_services" rows="4" placeholder='[{"name":"Spa","qty":2,"price":500}]'></textarea>
+          <div class="form-actions">
+            <button class="btn" type="button" id="btnGenerate">Generate</button>
+            <button class="btn ghost" type="reset">Reset</button>
+          </div>
+        </form>
+      </div>
+
+      <div id="billPreview" class="card" style="display:none">
+        <h3>Bill Preview</h3>
+        <div id="billHtml"></div>
+        <div style="margin-top:12px">
+          <button class="btn" id="btnSaveBill">Save</button>
+          <button class="btn ghost" id="btnPrint">Print</button>
+        </div>
+      </div>
+
+      <div id="include-footer"></div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { formatCurrency } from '../static/js/utils.js';
+    document.getElementById('btnGenerate').addEventListener('click', ()=>{
+      const booking = document.getElementById('bill_booking_id').value.trim();
+      const guest = document.getElementById('bill_guest').value.trim();
+      const room_rate = Number(document.getElementById('bill_room_rate').value) || 0;
+      let services = [];
+      try { services = JSON.parse(document.getElementById('bill_services').value || '[]'); } catch(e){ alert('Services JSON invalid'); return; }
+      // compute totals
+      const servicesTotal = services.reduce((s,i)=> s + (i.qty||1)*(i.price||0), 0);
+      const subtotal = room_rate + servicesTotal;
+      const tax = +(subtotal * 0.18).toFixed(2);
+      const total = +(subtotal + tax).toFixed(2);
+      const html = `
+        <div><strong>Booking:</strong> ${booking}</div>
+        <div><strong>Guest:</strong> ${guest}</div>
+        <div style="margin-top:8px"><strong>Room:</strong> ${formatCurrency(room_rate)}</div>
+        <div><strong>Services:</strong> ${formatCurrency(servicesTotal)}</div>
+        <div><strong>Tax (18%):</strong> ${formatCurrency(tax)}</div>
+        <h3>Total: ${formatCurrency(total)}</h3>
+      `;
+      document.getElementById('billHtml').innerHTML = html;
+      document.getElementById('billPreview').style.display = 'block';
+    });
+
+    document.getElementById('btnPrint').addEventListener('click', ()=> { window.print(); });
+    document.getElementById('btnSaveBill').addEventListener('click', ()=> { window.toast('Bill saved (demo)'); });
+  </script>
+</body></html>

@@ -1,0 +1,571 @@
+{% extends "base.html" %}
+
+{% block title %}Room Management - Hotel Management System{% endblock %}
+
+{% block page_icon %}<i class="fas fa-door-open"></i>{% endblock %}
+{% block page_title %}Room Management{% endblock %}
+{% block page_subtitle %}
+  Manage hotel rooms, track occupancy, and availability
+{% endblock %}
+
+{% block breadcrumb %}
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
+    <li class="breadcrumb-item active">Room Management</li>
+  </ol>
+{% endblock %}
+
+{% block content %}
+
+<!-- Success/Error Messages -->
+{% if session.get('success_message') %}
+  <div class="alert alert-success alert-dismissible fade show" role="alert">
+    <i class="fas fa-check-circle"></i> {{ session.get('success_message') }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+{% endif %}
+
+{% if session.get('error_message') %}
+  <div class="alert alert-danger alert-dismissible fade show" role="alert">
+    <i class="fas fa-exclamation-circle"></i> {{ session.get('error_message') }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+{% endif %}
+
+<!-- Quick Statistics -->
+<div class="row mb-4">
+  <div class="col-md-3">
+    <div class="card text-center shadow-sm">
+      <div class="card-body">
+        <h6 class="text-muted mb-2">Total Rooms</h6>
+        <h2 class="text-primary">{{ total_rooms or '---' }}</h2>
+        <small class="text-muted">Across all hotel</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center shadow-sm">
+      <div class="card-body">
+        <h6 class="text-muted mb-2">Available</h6>
+        <h2 class="text-success">{{ available_rooms or '0' }}</h2>
+        <small class="text-muted">Ready for booking</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center shadow-sm">
+      <div class="card-body">
+        <h6 class="text-muted mb-2">Booked</h6>
+        <h2 class="text-warning">{{ booked_rooms or '0' }}</h2>
+        <small class="text-muted">Currently occupied</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center shadow-sm">
+      <div class="card-body">
+        <h6 class="text-muted mb-2">Maintenance</h6>
+        <h2 class="text-danger">{{ maintenance_rooms or '0' }}</h2>
+        <small class="text-muted">Under maintenance</small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Filters & Search -->
+<div class="card shadow mb-4">
+  <div class="card-body">
+    <div class="row align-items-end">
+      <!-- Search -->
+      <div class="col-md-4 mb-3 mb-md-0">
+        <label class="form-label">Search by Room Number</label>
+        <div class="input-group">
+          <input 
+            type="text" 
+            class="form-control" 
+            id="searchInput" 
+            placeholder="e.g., 101, 102..."
+            onkeyup="filterRooms()">
+          <button class="btn btn-outline-primary" type="button" onclick="clearSearch()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Room Type Filter -->
+      <div class="col-md-3 mb-3 mb-md-0">
+        <label class="form-label">Room Type</label>
+        <select class="form-select" id="roomTypeFilter" onchange="filterRooms()">
+          <option value="">-- All Types --</option>
+          <option value="Standard">Standard</option>
+          <option value="Deluxe">Deluxe</option>
+          <option value="Suite">Suite</option>
+          <option value="Premium">Premium</option>
+        </select>
+      </div>
+
+      <!-- Status Filter -->
+      <div class="col-md-3 mb-3 mb-md-0">
+        <label class="form-label">Status</label>
+        <select class="form-select" id="statusFilter" onchange="filterRooms()">
+          <option value="">-- All Status --</option>
+          <option value="Available">Available</option>
+          <option value="Booked">Booked</option>
+          <option value="Maintenance">Maintenance</option>
+        </select>
+      </div>
+
+      <!-- Price Range -->
+      <div class="col-md-2">
+        <label class="form-label">Price Range</label>
+        <select class="form-select" id="priceFilter" onchange="filterRooms()">
+          <option value="">-- All Prices --</option>
+          <option value="budget">Budget (< ₹2000)</option>
+          <option value="standard">Standard (₹2000-3500)</option>
+          <option value="premium">Premium (₹3500-5000)</option>
+          <option value="luxury">Luxury (> ₹5000)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Quick Filters -->
+    <div class="row mt-3">
+      <div class="col-12">
+        <button class="btn btn-sm btn-outline-primary me-2" onclick="quickFilter('available')">
+          <i class="fas fa-check-circle"></i> Available Only
+        </button>
+        <button class="btn btn-sm btn-outline-warning me-2" onclick="quickFilter('booked')">
+          <i class="fas fa-door-closed"></i> Booked Only
+        </button>
+        <button class="btn btn-sm btn-outline-danger me-2" onclick="quickFilter('maintenance')">
+          <i class="fas fa-tools"></i> Maintenance
+        </button>
+        <button class="btn btn-sm btn-outline-secondary" onclick="resetFilters()">
+          <i class="fas fa-redo"></i> Reset All
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Room Grid -->
+<div class="row" id="roomContainer">
+  {% if rooms %}
+    {% for room in rooms %}
+      <div class="col-lg-3 col-md-4 col-sm-6 mb-4 room-card" data-room-type="{{ room.room_type }}" data-room-status="{{ room.status }}" data-room-price="{{ room.price_per_night }}">
+        <div class="card h-100 shadow-sm room-item">
+          
+          <!-- Card Header with Status -->
+          <div class="card-header {% if room.status == 'Available' %}bg-success{% elif room.status == 'Booked' %}bg-warning{% else %}bg-danger{% endif %} text-white d-flex justify-content-between align-items-center">
+            <strong>Room {{ room.room_number }}</strong>
+            <span class="badge bg-light text-dark">{{ room.status }}</span>
+          </div>
+
+          <!-- Card Body -->
+          <div class="card-body">
+            
+            <!-- Room Type Badge -->
+            <div class="mb-2">
+              <span class="badge bg-info">{{ room.room_type }}</span>
+            </div>
+
+            <!-- Room Details -->
+            <p class="mb-2">
+              <strong>Price:</strong><br>
+              <span class="h5 text-primary">₹{{ room.price_per_night }}/night</span>
+            </p>
+
+            <!-- Status Indicator -->
+            <p class="mb-2">
+              <strong>Status:</strong><br>
+              {% if room.status == 'Available' %}
+                <span class="badge bg-success"><i class="fas fa-check-circle"></i> Available</span>
+              {% elif room.status == 'Booked' %}
+                <span class="badge bg-warning text-dark"><i class="fas fa-door-closed"></i> Booked</span>
+              {% elif room.status == 'Maintenance' %}
+                <span class="badge bg-danger"><i class="fas fa-tools"></i> Maintenance</span>
+              {% endif %}
+            </p>
+
+            <!-- Current Guest (if booked) -->
+            {% if room.current_guest %}
+              <p class="mb-2">
+                <strong>Guest:</strong><br>
+                <small>{{ room.current_guest }}</small>
+              </p>
+              <p class="mb-2">
+                <strong>Check-out:</strong><br>
+                <small>{{ room.checkout_date }}</small>
+              </p>
+            {% endif %}
+
+            <!-- Last Maintenance -->
+            {% if room.last_maintenance %}
+              <p class="mb-0">
+                <strong>Last Maintenance:</strong><br>
+                <small class="text-muted">{{ room.last_maintenance }}</small>
+              </p>
+            {% endif %}
+
+          </div>
+
+          <!-- Card Footer with Actions -->
+          <div class="card-footer bg-light">
+            <div class="btn-group btn-group-sm w-100" role="group">
+              {% if room.status == 'Available' %}
+                <a href="/rooms/{{ room.room_id }}/edit" class="btn btn-outline-primary" title="Edit Room">
+                  <i class="fas fa-edit"></i> Edit
+                </a>
+                <button type="button" class="btn btn-outline-warning" onclick="changeStatus({{ room.room_id }}, 'Maintenance')" title="Set to Maintenance">
+                  <i class="fas fa-tools"></i> Maintenance
+                </button>
+              {% elif room.status == 'Booked' %}
+                <button type="button" class="btn btn-outline-info" onclick="viewBooking({{ room.room_id }})">
+                  <i class="fas fa-info-circle"></i> Booking
+                </button>
+                <button type="button" class="btn btn-outline-success" onclick="changeStatus({{ room.room_id }}, 'Available')">
+                  <i class="fas fa-check"></i> Available
+                </button>
+              {% elif room.status == 'Maintenance' %}
+                <button type="button" class="btn btn-outline-success" onclick="changeStatus({{ room.room_id }}, 'Available')" title="Mark Available">
+                  <i class="fas fa-check-circle"></i> Complete
+                </button>
+                <button type="button" class="btn btn-outline-secondary" onclick="editRoom({{ room.room_id }})">
+                  <i class="fas fa-edit"></i> Edit
+                </button>
+              {% endif %}
+            </div>
+          </div>
+
+        </div>
+      </div>
+    {% endfor %}
+  {% else %}
+    <div class="col-12">
+      <div class="alert alert-info text-center" role="alert">
+        <i class="fas fa-inbox" style="font-size: 2rem; opacity: 0.3;"></i>
+        <p class="mt-2 mb-0">No rooms found. Please check your filters.</p>
+      </div>
+    </div>
+  {% endif %}
+</div>
+
+<!-- Pagination -->
+{% if total_pages > 1 %}
+<nav aria-label="Room pagination" class="mt-4">
+  <ul class="pagination justify-content-center">
+    {% if current_page > 1 %}
+      <li class="page-item">
+        <a class="page-link" href="/rooms?page=1">First</a>
+      </li>
+      <li class="page-item">
+        <a class="page-link" href="/rooms?page={{ current_page - 1 }}">Previous</a>
+      </li>
+    {% endif %}
+
+    {% for page_num in range(max(1, current_page - 2), min(total_pages + 1, current_page + 3)) %}
+      {% if page_num == current_page %}
+        <li class="page-item active">
+          <span class="page-link">{{ page_num }}</span>
+        </li>
+      {% else %}
+        <li class="page-item">
+          <a class="page-link" href="/rooms?page={{ page_num }}">{{ page_num }}</a>
+        </li>
+      {% endif %}
+    {% endfor %}
+
+    {% if current_page < total_pages %}
+      <li class="page-item">
+        <a class="page-link" href="/rooms?page={{ current_page + 1 }}">Next</a>
+      </li>
+      <li class="page-item">
+        <a class="page-link" href="/rooms?page={{ total_pages }}">Last</a>
+      </li>
+    {% endif %}
+  </ul>
+</nav>
+{% endif %}
+
+<!-- Status Update Modal -->
+<div class="modal fade" id="statusModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Change Room Status</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to change the status of <strong id="roomNumberDisplay"></strong>?</p>
+        <div id="statusMessage" class="alert alert-info mt-3"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="confirmStatusBtn" onclick="confirmStatusChange()">Confirm</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Maintenance Log Modal -->
+<div class="modal fade" id="maintenanceModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Maintenance Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="maintenanceForm">
+          <div class="mb-3">
+            <label class="form-label">Maintenance Notes</label>
+            <textarea class="form-control" id="maintenanceNotes" rows="4" placeholder="Describe maintenance work..."></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Completion Date</label>
+            <input type="date" class="form-control" id="maintenanceDate" value="{{ today }}">
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" onclick="saveMaintenance()">Save Maintenance</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bulk Actions Bar -->
+<div class="fixed-bottom bg-white border-top p-3" id="bulkActionsBar" style="display: none; box-shadow: 0 -2px 10px rgba(0,0,0,0.1);">
+  <div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center">
+      <span>
+        <strong id="selectedCount">0</strong> rooms selected
+      </span>
+      <div>
+        <button class="btn btn-sm btn-warning me-2" onclick="bulkMaintenance()">
+          <i class="fas fa-tools"></i> Set to Maintenance
+        </button>
+        <button class="btn btn-sm btn-success me-2" onclick="bulkAvailable()">
+          <i class="fas fa-check-circle"></i> Mark Available
+        </button>
+        <button class="btn btn-sm btn-outline-secondary" onclick="clearSelection()">
+          <i class="fas fa-times"></i> Clear Selection
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  let selectedRooms = [];
+  let statusChangeRoom = null;
+  let statusChangeType = null;
+
+  // Filter rooms
+  function filterRooms() {
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    const roomType = document.getElementById('roomTypeFilter').value;
+    const status = document.getElementById('statusFilter').value;
+    const price = document.getElementById('priceFilter').value;
+
+    const rooms = document.querySelectorAll('.room-card');
+    let visibleCount = 0;
+
+    rooms.forEach(room => {
+      let show = true;
+
+      // Search filter
+      if (search && !room.querySelector('strong').textContent.toLowerCase().includes(search)) {
+        show = false;
+      }
+
+      // Room type filter
+      if (roomType && room.dataset.roomType !== roomType) {
+        show = false;
+      }
+
+      // Status filter
+      if (status && room.dataset.roomStatus !== status) {
+        show = false;
+      }
+
+      // Price filter
+      if (price && !filterByPrice(room.dataset.roomPrice, price)) {
+        show = false;
+      }
+
+      room.style.display = show ? '' : 'none';
+      if (show) visibleCount++;
+    });
+
+    // Show no results message
+    const noResults = visibleCount === 0;
+    document.querySelector('.alert-info')?.style.display = noResults ? 'block' : 'none';
+  }
+
+  // Filter by price range
+  function filterByPrice(price, range) {
+    price = parseInt(price);
+    switch(range) {
+      case 'budget': return price < 2000;
+      case 'standard': return price >= 2000 && price < 3500;
+      case 'premium': return price >= 3500 && price <= 5000;
+      case 'luxury': return price > 5000;
+      default: return true;
+    }
+  }
+
+  // Quick filters
+  function quickFilter(type) {
+    clearAllFilters();
+    if (type === 'available') {
+      document.getElementById('statusFilter').value = 'Available';
+    } else if (type === 'booked') {
+      document.getElementById('statusFilter').value = 'Booked';
+    } else if (type === 'maintenance') {
+      document.getElementById('statusFilter').value = 'Maintenance';
+    }
+    filterRooms();
+  }
+
+  // Reset filters
+  function resetFilters() {
+    clearAllFilters();
+    filterRooms();
+  }
+
+  // Clear all filters
+  function clearAllFilters() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('roomTypeFilter').value = '';
+    document.getElementById('statusFilter').value = '';
+    document.getElementById('priceFilter').value = '';
+  }
+
+  // Clear search
+  function clearSearch() {
+    document.getElementById('searchInput').value = '';
+    filterRooms();
+  }
+
+  // Change room status
+  function changeStatus(roomId, newStatus) {
+    statusChangeRoom = roomId;
+    statusChangeType = newStatus;
+
+    const roomCard = document.querySelector(`[data-room-id="${roomId}"]`);
+    const roomNum = roomCard?.querySelector('strong')?.textContent || `Room ${roomId}`;
+
+    document.getElementById('roomNumberDisplay').textContent = roomNum;
+    
+    let message = '';
+    if (newStatus === 'Maintenance') {
+      message = 'This room will be marked as "Under Maintenance" and unavailable for booking.';
+    } else if (newStatus === 'Available') {
+      message = 'This room will be marked as "Available" for new bookings.';
+    }
+
+    document.getElementById('statusMessage').textContent = message;
+
+    new bootstrap.Modal(document.getElementById('statusModal')).show();
+  }
+
+  // Confirm status change
+  function confirmStatusChange() {
+    if (statusChangeRoom && statusChangeType) {
+      updateRoomStatus(statusChangeRoom, statusChangeType);
+      bootstrap.Modal.getInstance(document.getElementById('statusModal')).hide();
+    }
+  }
+
+  // Update room status (API call)
+  function updateRoomStatus(roomId, status) {
+    fetch(`/api/rooms/${roomId}/status`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ status: status })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        alert('Room status updated successfully');
+        location.reload();
+      } else {
+        alert('Error updating room status: ' + data.error);
+      }
+    })
+    .catch(error => alert('Error: ' + error));
+  }
+
+  // View booking
+  function viewBooking(roomId) {
+    // Redirect to booking details
+    window.location.href = `/bookings?room_id=${roomId}`;
+  }
+
+  // Edit room
+  function editRoom(roomId) {
+    window.location.href = `/rooms/${roomId}/edit`;
+  }
+
+  // Bulk maintenance
+  function bulkMaintenance() {
+    if (selectedRooms.length === 0) {
+      alert('Please select rooms first');
+      return;
+    }
+    // Update multiple rooms
+    console.log('Setting to maintenance:', selectedRooms);
+  }
+
+  // Bulk available
+  function bulkAvailable() {
+    if (selectedRooms.length === 0) {
+      alert('Please select rooms first');
+      return;
+    }
+    // Update multiple rooms
+    console.log('Marking available:', selectedRooms);
+  }
+
+  // Clear selection
+  function clearSelection() {
+    selectedRooms = [];
+    document.getElementById('bulkActionsBar').style.display = 'none';
+    document.querySelectorAll('.room-item').forEach(room => {
+      room.classList.remove('selected');
+    });
+  }
+
+  // Auto-dismiss alerts
+  document.querySelectorAll('.alert').forEach(alert => {
+    setTimeout(() => {
+      alert.style.display = 'none';
+    }, 5000);
+  });
+
+  // Add CSS for hover effects
+  const style = document.createElement('style');
+  style.textContent = `
+    .room-item {
+      transition: transform 0.2s, box-shadow 0.2s;
+      cursor: pointer;
+    }
+    .room-item:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15) !important;
+    }
+    .room-item.selected {
+      border: 3px solid #007bff;
+      background-color: #f0f8ff;
+    }
+  `;
+  document.head.appendChild(style);
+</script>
+{% endblock %}

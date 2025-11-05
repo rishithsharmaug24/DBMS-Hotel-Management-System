@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>{% block title %}Hotel Management System - Internal Admin{% endblock %}</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+    
+    {% block extra_css %}{% endblock %}
+    
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #6c757d;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --info-color: #17a2b8;
+            --sidebar-width: 250px;
+            --navbar-height: 56px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html, body {
+            height: 100%;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            overflow-x: hidden;
+        }
+        
+        /* ===== NAVBAR ===== */
+        .navbar {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            padding: 0.5rem 1rem;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1030;
+            height: var(--navbar-height);
+        }
+        
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #fff !important;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .navbar-brand i {
+            font-size: 1.8rem;
+        }
+        
+        .navbar-nav .nav-link {
+            color: rgba(255, 255, 255, 0.9) !important;
+            font-weight: 500;
+            padding: 0.5rem 1rem !important;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            margin: 0 2px;
+        }
+        
+        .navbar-nav .nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #fff !important;
+        }
+        
+        .navbar-nav .nav-link.active {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: #fff !important;
+        }
+        
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-left: auto;
+        }
+        
+        .user-info {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .logout-btn {
+            background-color: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            color: #fff;
+            padding: 5px 15px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+        
+        .logout-btn:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+            color: #fff;
+        }
+        
+        /* ===== MAIN LAYOUT ===== */
+        .main-container {
+            display: flex;
+            margin-top: var(--navbar-height);
+            height: calc(100vh - var(--navbar-height));
+        }
+        
+        /* ===== SIDEBAR ===== */
+        .sidebar {
+            width: var(--sidebar-width);
+            background-color: #ffffff;
+            border-right: 1px solid #e9ecef;
+            overflow-y: auto;
+            padding: 20px 0;
+            box-shadow: 2px 0 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .sidebar-menu-item {
+            padding: 0;
+            margin: 5px 0;
+        }
+        
+        .sidebar-menu-item a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            color: #495057;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar-menu-item a:hover {
+            background-color: #f8f9fa;
+            color: var(--primary-color);
+            border-left-color: var(--primary-color);
+        }
+        
+        .sidebar-menu-item a.active {
+            background-color: #e7f1ff;
+            color: var(--primary-color);
+            border-left-color: var(--primary-color);
+        }
+        
+        .sidebar-menu-item a i {
+            width: 20px;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+        
+        .sidebar-menu-header {
+            padding: 15px 20px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #999;
+            letter-spacing: 0.5px;
+            margin-top: 10px;
+        }
+        
+        /* ===== MAIN CONTENT ===== */
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 30px;
+        }
+        
+        .page-header {
+            margin-bottom: 30px;
+        }
+        
+        .page-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #212529;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .page-title i {
+            color: var(--primary-color);
+        }
+        
+        .page-subtitle {
+            font-size: 0.95rem;
+            color: #6c757d;
+        }
+        
+        /* ===== BREADCRUMB ===== */
+        .breadcrumb {
+            background-color: transparent;
+            padding: 0;
+            margin-top: 10px;
+        }
+        
+        .breadcrumb-item {
+            font-size: 0.9rem;
+        }
+        
+        .breadcrumb-item.active {
+            color: var(--primary-color);
+        }
+        
+        /* ===== CARDS ===== */
+        .card {
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .card:hover {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            color: #fff;
+            border-radius: 8px 8px 0 0;
+            padding: 15px 20px;
+            font-weight: 600;
+            border: none;
+        }
+        
+        .card-body {
+            padding: 20px;
+        }
+        
+        /* ===== BUTTONS ===== */
+        .btn {
+            border-radius: 6px;
+            font-weight: 500;
+            padding: 8px 16px;
+            border: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: #fff;
+        }
+        
+        .btn-primary:hover {
+            background-color: #0056b3;
+            color: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 86, 179, 0.3);
+        }
+        
+        .btn-secondary {
+            background-color: var(--secondary-color);
+            color: #fff;
+        }
+        
+        .btn-success {
+            background-color: var(--success-color);
+            color: #fff;
+        }
+        
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: #fff;
+        }
+        
+        .btn-warning {
+            background-color: var(--warning-color);
+            color: #000;
+        }
+        
+        /* ===== FORMS ===== */
+        .form-label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+        
+        .form-control,
+        .form-select {
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 10px 12px;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus,
+        .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+        
+        /* ===== TABLES ===== */
+        .table {
+            background-color: #fff;
+            font-size: 0.95rem;
+        }
+        
+        .table thead th {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+            color: #495057;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+            padding: 15px;
+        }
+        
+        .table tbody tr {
+            border-bottom: 1px solid #dee2e6;
+            transition: background-color 0.3s ease;
+        }
+        
+        .table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .table tbody td {
+            padding: 12px 15px;
+            vertical-align: middle;
+        }
+        
+        /* ===== BADGES ===== */
+        .badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        
+        /* ===== ALERTS ===== */
+        .alert {
+            border-radius: 6px;
+            border: none;
+            padding: 12px 16px;
+        }
+        
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .alert-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .alert-warning {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .alert-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        /* ===== FOOTER ===== */
+        footer {
+            background-color: #f8f9fa;
+            border-top: 1px solid #dee2e6;
+            padding: 20px;
+            text-align: center;
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-top: auto;
+        }
+        
+        /* ===== SCROLLBAR ===== */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .sidebar {
+                display: none;
+            }
+            
+            .main-content {
+                padding: 15px;
+            }
+            
+            .page-title {
+                font-size: 1.5rem;
+            }
+            
+            .navbar {
+                height: auto;
+            }
+            
+            .user-menu {
+                margin-top: 10px;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- ===== NAVBAR ===== -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <!-- Brand -->
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-hotel"></i>
+                <span>Hotel Management System</span>
+            </a>
+            
+            <!-- Toggler Button (Mobile) -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <!-- Navigation Menu -->
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/dashboard">
+                            <i class="fas fa-chart-line"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/guests">
+                            <i class="fas fa-users"></i> Guests
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/rooms">
+                            <i class="fas fa-door-open"></i> Rooms
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/bookings">
+                            <i class="fas fa-calendar-check"></i> Bookings
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/payments">
+                            <i class="fas fa-credit-card"></i> Payments
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/bills">
+                            <i class="fas fa-file-invoice"></i> Bills
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/reports">
+                            <i class="fas fa-chart-bar"></i> Reports
+                        </a>
+                    </li>
+                </ul>
+                
+                <!-- User Menu -->
+                <div class="user-menu">
+                    <div class="user-info">
+                        <i class="fas fa-user-circle"></i>
+                        <span>{{ user_name if user_name else 'Admin' }}</span>
+                    </div>
+                    <a href="/logout" class="logout-btn">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- ===== MAIN CONTAINER ===== -->
+    <div class="main-container">
+        
+        <!-- ===== SIDEBAR ===== -->
+        <aside class="sidebar">
+            <ul class="sidebar-menu">
+                
+                <!-- Dashboard -->
+                <li class="sidebar-menu-item">
+                    <a href="/dashboard" class="{% if request.path == '/dashboard' %}active{% endif %}">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                
+                <!-- Operations Section -->
+                <li class="sidebar-menu-header">
+                    <i class="fas fa-cogs"></i> Operations
+                </li>
+                
+                <li class="sidebar-menu-item">
+                    <a href="/guests" class="{% if '/guests' in request.path %}active{% endif %}">
+                        <i class="fas fa-users"></i>
+                        <span>Guest Management</span>
+                    </a>
+                </li>
+                
+                <li class="sidebar-menu-item">
+                    <a href="/rooms" class="{% if '/rooms' in request.path %}active{% endif %}">
+                        <i class="fas fa-door-open"></i>
+                        <span>Room Management</span>
+                    </a>
+                </li>
+                
+                <li class="sidebar-menu-item">
+                    <a href="/bookings" class="{% if '/bookings' in request.path %}active{% endif %}">
+                        <i class="fas fa-calendar-check"></i>
+                        <span>Bookings</span>
+                    </a>
+                </li>
+                
+                <!-- Transactions Section -->
+                <li class="sidebar-menu-header">
+                    <i class="fas fa-exchange-alt"></i> Transactions
+                </li>
+                
+                <li class="sidebar-menu-item">
+                    <a href="/payments" class="{% if '/payments' in request.path %}active{% endif %}">
+                        <i class="fas fa-credit-card"></i>
+                        <span>Payments</span>
+                    </a>
+                </li>
+                
+                <li class="sidebar-menu-item">
+                    <a href="/bills" class="{% if '/bills' in request.path %}active{% endif %}">
+                        <i class="fas fa-file-invoice"></i>
+                        <span>Bills</span>
+                    </a>
+                </li>
+                
+                <li class="sidebar-menu-item">
+                    <a href="/services" class="{% if '/services' in request.path %}active{% endif %}">
+                        <i class="fas fa-concierge-bell"></i>
+                        <span>Services</span>
+                    </a>
+                </li>
+                
+                <!-- Analytics Section -->
+                <li class="sidebar-menu-header">
+                    <i class="fas fa-chart-pie"></i> Analytics
+                </li>
+                
+                <li class="sidebar-menu-item">
+                    <a href="/reports" class="{% if '/reports' in request.path %}active{% endif %}">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Reports</span>
+                    </a>
+                </li>
+                
+                <li class="sidebar-menu-item">
+                    <a href="/occupancy" class="{% if '/occupancy' in request.path %}active{% endif %}">
+                        <i class="fas fa-percent"></i>
+                        <span>Occupancy</span>
+                    </a>
+                </li>
+                
+                <!-- Admin Section -->
+                <li class="sidebar-menu-header">
+                    <i class="fas fa-lock"></i> Administration
+                </li>
+                
+                <li class="sidebar-menu-item">
+                    <a href="/staff" class="{% if '/staff' in request.path %}active{% endif %}">
+                        <i class="fas fa-user-tie"></i>
+                        <span>Staff Management</span>
+                    </a>
+                </li>
+                
+                <li class="sidebar-menu-item">
+                    <a href="/settings" class="{% if '/settings' in request.path %}active{% endif %}">
+                        <i class="fas fa-sliders-h"></i>
+                        <span>Settings</span>
+                    </a>
+                </li>
+                
+            </ul>
+        </aside>
+        
+        <!-- ===== MAIN CONTENT ===== -->
+        <main class="main-content">
+            
+            <!-- Page Header -->
+            <div class="page-header">
+                <div class="page-title">
+                    {% block page_icon %}<i class="fas fa-home"></i>{% endblock %}
+                    {% block page_title %}Hotel Management System{% endblock %}
+                </div>
+                {% if page_subtitle %}
+                    <p class="page-subtitle">{% block page_subtitle %}{% endblock %}</p>
+                {% endif %}
+                
+                <!-- Breadcrumb -->
+                {% block breadcrumb %}{% endblock %}
+            </div>
+            
+            <!-- Alert Messages -->
+            {% if session.get('success_message') %}
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="fas fa-check-circle"></i> {{ session.get('success_message') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endif %}
+            
+            {% if session.get('error_message') %}
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-circle"></i> {{ session.get('error_message') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endif %}
+            
+            {% if session.get('warning_message') %}
+                <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-triangle"></i> {{ session.get('warning_message') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endif %}
+            
+            <!-- Main Content Block -->
+            {% block content %}
+                <!-- Page content goes here -->
+            {% endblock %}
+            
+        </main>
+        
+    </div>
+    
+    <!-- ===== FOOTER ===== -->
+    <footer>
+        <p>&copy; 2025 Hotel Management System - Internal Admin Module | NSUT Delhi</p>
+        <small>All rights reserved. Built with Flask & MySQL</small>
+    </footer>
+    
+    <!-- ===== BOOTSTRAP 5 JS ===== -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- ===== CHART.JS (for analytics) ===== -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    
+    <!-- ===== CUSTOM JS ===== -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/validation.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/api_calls.js') }}"></script>
+    
+    {% block extra_js %}{% endblock %}
+    
+    <script>
+        // Auto-hide alerts after 5 seconds
+        document.querySelectorAll('.alert').forEach(alert => {
+            setTimeout(() => {
+                alert.classList.remove('show');
+                alert.style.display = 'none';
+            }, 5000);
+        });
+        
+        // Set active nav link
+        document.querySelectorAll('.nav-link').forEach(link => {
+            if (link.href === window.location.href) {
+                link.classList.add('active');
+            }
+        });
+    </script>
+</body>
+</html>

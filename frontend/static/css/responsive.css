@@ -1,0 +1,6 @@
+/* responsive tweaks */
+@media (max-width:980px){
+  .app-grid{grid-template-columns:1fr; padding:12px}
+  .sidebar{display:none}
+  .topbar .search-wrap input{min-width:140px}
+}

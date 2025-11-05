@@ -1,0 +1,490 @@
+{% extends "base.html" %}
+
+{% block title %}Guest Management - Hotel Management System{% endblock %}
+
+{% block page_icon %}<i class="fas fa-users"></i>{% endblock %}
+{% block page_title %}Guest Management{% endblock %}
+{% block page_subtitle %}
+  View, search, and manage guest information
+{% endblock %}
+
+{% block breadcrumb %}
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
+    <li class="breadcrumb-item active">Guest Management</li>
+  </ol>
+{% endblock %}
+
+{% block content %}
+
+<!-- Success/Error Messages -->
+{% if session.get('success_message') %}
+  <div class="alert alert-success alert-dismissible fade show" role="alert">
+    <i class="fas fa-check-circle"></i> {{ session.get('success_message') }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+{% endif %}
+
+{% if session.get('error_message') %}
+  <div class="alert alert-danger alert-dismissible fade show" role="alert">
+    <i class="fas fa-exclamation-circle"></i> {{ session.get('error_message') }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+{% endif %}
+
+<!-- Quick Statistics Cards -->
+<div class="row mb-4">
+  <div class="col-md-3">
+    <div class="card text-center">
+      <div class="card-body">
+        <h6 class="text-muted mb-2">Total Guests</h6>
+        <h2 class="text-primary">{{ total_guests or '---' }}</h2>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center">
+      <div class="card-body">
+        <h6 class="text-muted mb-2">This Month</h6>
+        <h2 class="text-success">{{ guests_this_month or '---' }}</h2>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center">
+      <div class="card-body">
+        <h6 class="text-muted mb-2">Active Bookings</h6>
+        <h2 class="text-info">{{ active_bookings or '---' }}</h2>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center">
+      <div class="card-body">
+        <h6 class="text-muted mb-2">Recent Check-ins</h6>
+        <h2 class="text-warning">{{ recent_checkins or '---' }}</h2>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Filters & Search Bar -->
+<div class="card shadow mb-4">
+  <div class="card-body">
+    <div class="row">
+      <!-- Search Box -->
+      <div class="col-md-6 mb-3 mb-md-0">
+        <div class="input-group">
+          <input 
+            type="text" 
+            class="form-control" 
+            id="searchInput" 
+            placeholder="Search by name, email, phone, or guest ID..."
+            onkeyup="filterTable()">
+          <button class="btn btn-outline-primary" type="button" id="searchBtn">
+            <i class="fas fa-search"></i> Search
+          </button>
+        </div>
+      </div>
+
+      <!-- Filter Buttons -->
+      <div class="col-md-6">
+        <div class="btn-group float-end" role="group">
+          <a href="/guests" class="btn btn-outline-primary" id="filterAll" onclick="filterByStatus('all')">
+            <i class="fas fa-list"></i> All
+          </a>
+          <a href="/guests?status=active" class="btn btn-outline-success" onclick="filterByStatus('active')">
+            <i class="fas fa-check-circle"></i> Active
+          </a>
+          <a href="/guests" class="btn btn-outline-secondary" id="exportBtn">
+            <i class="fas fa-download"></i> Export CSV
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Advanced Filters -->
+    <div class="row mt-3">
+      <div class="col-md-3 mb-2">
+        <select class="form-select form-select-sm" id="sortBy" onchange="sortTable()">
+          <option value="">-- Sort By --</option>
+          <option value="name">Name (A-Z)</option>
+          <option value="email">Email</option>
+          <option value="recent">Recently Added</option>
+        </select>
+      </div>
+      <div class="col-md-3 mb-2">
+        <input type="date" class="form-control form-control-sm" id="filterDate" placeholder="Filter by date">
+      </div>
+      <div class="col-md-3 mb-2">
+        <select class="form-select form-select-sm" id="pageSize" onchange="changePageSize()">
+          <option value="10">10 per page</option>
+          <option value="25">25 per page</option>
+          <option value="50">50 per page</option>
+          <option value="100">100 per page</option>
+        </select>
+      </div>
+      <div class="col-md-3 mb-2">
+        <button class="btn btn-sm btn-outline-secondary w-100" onclick="resetFilters()">
+          <i class="fas fa-redo"></i> Reset Filters
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Main Guest List Table -->
+<div class="card shadow">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0"><i class="fas fa-table"></i> Guest List</h5>
+    <div>
+      <a href="/guests/register" class="btn btn-sm btn-primary">
+        <i class="fas fa-user-plus"></i> New Guest
+      </a>
+    </div>
+  </div>
+
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0" id="guestTable">
+        <thead class="table-light">
+          <tr>
+            <th scope="col">
+              <input class="form-check-input" type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+            </th>
+            <th scope="col">Guest ID</th>
+            <th scope="col">Name</th>
+            <th scope="col">Email</th>
+            <th scope="col">Phone</th>
+            <th scope="col">City</th>
+            <th scope="col">ID Proof</th>
+            <th scope="col">Bookings</th>
+            <th scope="col">Joined</th>
+            <th scope="col">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% if guests %}
+          {% for guest in guests %}
+            <tr>
+              <td>
+                <input class="form-check-input guest-checkbox" type="checkbox" value="{{ guest.guest_id }}">
+              </td>
+              <td>
+                <strong>#{{ guest.guest_id }}</strong>
+              </td>
+              <td>
+                <i class="fas fa-user-circle text-primary me-2"></i>
+                <strong>{{ guest.name }}</strong>
+              </td>
+              <td>
+                <a href="mailto:{{ guest.email }}" class="text-decoration-none">
+                  {{ guest.email }}
+                </a>
+              </td>
+              <td>
+                {% if guest.primary_phone %}
+                  <a href="tel:{{ guest.primary_phone }}" class="text-decoration-none">
+                    <i class="fas fa-phone"></i> {{ guest.primary_phone }}
+                  </a>
+                {% else %}
+                  <span class="text-muted">--</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if guest.city %}
+                  <i class="fas fa-map-marker-alt text-danger me-1"></i>{{ guest.city }}
+                {% else %}
+                  <span class="text-muted">--</span>
+                {% endif %}
+              </td>
+              <td>
+                <span class="badge bg-info">{{ guest.id_proof_type or 'N/A' }}</span>
+              </td>
+              <td>
+                <span class="badge bg-primary">{{ guest.booking_count or 0 }} Bookings</span>
+              </td>
+              <td>
+                <small class="text-muted">{{ guest.created_at.strftime('%d-%m-%Y') if guest.created_at else '--' }}</small>
+              </td>
+              <td>
+                <div class="btn-group btn-group-sm" role="group">
+                  <a href="/guests/{{ guest.guest_id }}" class="btn btn-outline-info" title="View Details">
+                    <i class="fas fa-eye"></i>
+                  </a>
+                  <a href="/guests/{{ guest.guest_id }}/edit" class="btn btn-outline-warning" title="Edit">
+                    <i class="fas fa-edit"></i>
+                  </a>
+                  <button type="button" class="btn btn-outline-danger" onclick="deleteGuest({{ guest.guest_id }}, '{{ guest.name }}')" title="Delete">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="10" class="text-center py-4 text-muted">
+              <i class="fas fa-inbox" style="font-size: 2rem; opacity: 0.3;"></i>
+              <p class="mt-2">No guests found. <a href="/guests/register">Register a new guest</a></p>
+            </td>
+          </tr>
+        {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  {% if total_pages > 1 %}
+  <nav aria-label="Page navigation" class="d-flex justify-content-between align-items-center p-3 border-top">
+    <small class="text-muted">
+      Showing {{ (current_page - 1) * items_per_page + 1 }} to {{ [current_page * items_per_page, total_guests] | min }} of {{ total_guests }} guests
+    </small>
+    
+    <ul class="pagination mb-0">
+      {% if current_page > 1 %}
+        <li class="page-item">
+          <a class="page-link" href="/guests?page=1">First</a>
+        </li>
+        <li class="page-item">
+          <a class="page-link" href="/guests?page={{ current_page - 1 }}">Previous</a>
+        </li>
+      {% endif %}
+
+      {% for page_num in range(1, total_pages + 1) %}
+        {% if page_num == current_page %}
+          <li class="page-item active">
+            <span class="page-link">{{ page_num }}</span>
+          </li>
+        {% elif page_num >= current_page - 2 and page_num <= current_page + 2 %}
+          <li class="page-item">
+            <a class="page-link" href="/guests?page={{ page_num }}">{{ page_num }}</a>
+          </li>
+        {% endif %}
+      {% endfor %}
+
+      {% if current_page < total_pages %}
+        <li class="page-item">
+          <a class="page-link" href="/guests?page={{ current_page + 1 }}">Next</a>
+        </li>
+        <li class="page-item">
+          <a class="page-link" href="/guests?page={{ total_pages }}">Last</a>
+        </li>
+      {% endif %}
+    </ul>
+  </nav>
+  {% endif %}
+</div>
+
+<!-- Bulk Actions Modal -->
+<div class="modal fade" id="bulkActionsModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Bulk Actions</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Selected <strong id="selectedCount">0</strong> guests</p>
+        <div class="alert alert-info">
+          <i class="fas fa-info-circle"></i> Choose an action to perform on selected guests
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="exportSelected()">
+          <i class="fas fa-download"></i> Export Selected
+        </button>
+        <button type="button" class="btn btn-danger" onclick="deleteSelected()">
+          <i class="fas fa-trash"></i> Delete Selected
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header border-danger">
+        <h5 class="modal-title text-danger">
+          <i class="fas fa-exclamation-triangle"></i> Confirm Delete
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to delete <strong id="deleteGuestName"></strong>?</p>
+        <div class="alert alert-warning">
+          <i class="fas fa-warning"></i> This action cannot be undone. All associated bookings will remain for record-keeping.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteBtn" onclick="confirmDelete()">
+          <i class="fas fa-trash"></i> Delete Guest
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  let selectedGuests = [];
+  let deleteTargetId = null;
+
+  // Filter table by search
+  function filterTable() {
+    const input = document.getElementById('searchInput');
+    const filter = input.value.toLowerCase();
+    const table = document.getElementById('guestTable');
+    const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      const text = row.textContent || row.innerText;
+      if (text.toLowerCase().indexOf(filter) > -1) {
+        row.style.display = '';
+      } else {
+        row.style.display = 'none';
+      }
+    }
+  }
+
+  // Filter by status
+  function filterByStatus(status) {
+    if (status === 'all') {
+      window.location.href = '/guests';
+    } else if (status === 'active') {
+      window.location.href = '/guests?status=active';
+    }
+  }
+
+  // Sort table
+  function sortTable() {
+    const sortBy = document.getElementById('sortBy').value;
+    if (sortBy) {
+      window.location.href = `/guests?sort=${sortBy}`;
+    }
+  }
+
+  // Change page size
+  function changePageSize() {
+    const pageSize = document.getElementById('pageSize').value;
+    window.location.href = `/guests?page_size=${pageSize}`;
+  }
+
+  // Reset filters
+  function resetFilters() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('sortBy').value = '';
+    document.getElementById('pageSize').value = '10';
+    window.location.href = '/guests';
+  }
+
+  // Toggle select all checkboxes
+  function toggleSelectAll() {
+    const selectAll = document.getElementById('selectAll');
+    const checkboxes = document.querySelectorAll('.guest-checkbox');
+    checkboxes.forEach(checkbox => {
+      checkbox.checked = selectAll.checked;
+    });
+    updateSelectedCount();
+  }
+
+  // Update selected count
+  function updateSelectedCount() {
+    const checkboxes = document.querySelectorAll('.guest-checkbox:checked');
+    selectedGuests = Array.from(checkboxes).map(cb => cb.value);
+    document.getElementById('selectedCount').textContent = selectedGuests.length;
+  }
+
+  // Delete guest
+  function deleteGuest(guestId, guestName) {
+    deleteTargetId = guestId;
+    document.getElementById('deleteGuestName').textContent = guestName;
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+  }
+
+  // Confirm delete
+  function confirmDelete() {
+    if (deleteTargetId) {
+      fetch(`/api/guests/${deleteTargetId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          alert('Guest deleted successfully');
+          location.reload();
+        } else {
+          alert('Error deleting guest: ' + data.error);
+        }
+      })
+      .catch(error => {
+        alert('Error: ' + error);
+      });
+    }
+  }
+
+  // Export selected guests
+  function exportSelected() {
+    if (selectedGuests.length === 0) {
+      alert('Please select guests to export');
+      return;
+    }
+    // Send selected IDs to backend for export
+    window.location.href = `/api/guests/export?ids=${selectedGuests.join(',')}`;
+  }
+
+  // Delete selected guests
+  function deleteSelected() {
+    if (selectedGuests.length === 0) {
+      alert('Please select guests to delete');
+      return;
+    }
+    if (confirm(`Delete ${selectedGuests.length} guests? This cannot be undone.`)) {
+      fetch(`/api/guests/bulk-delete`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ guest_ids: selectedGuests })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          alert(`${data.deleted} guests deleted successfully`);
+          location.reload();
+        } else {
+          alert('Error: ' + data.error);
+        }
+      });
+    }
+  }
+
+  // Export all guests as CSV
+  document.getElementById('exportBtn').addEventListener('click', function() {
+    window.location.href = '/api/guests/export/csv';
+  });
+
+  // Update selected count on checkbox change
+  document.querySelectorAll('.guest-checkbox').forEach(checkbox => {
+    checkbox.addEventListener('change', updateSelectedCount);
+  });
+
+  // Auto-dismiss alerts
+  document.querySelectorAll('.alert').forEach(alert => {
+    setTimeout(() => {
+      if (alert) alert.style.display = 'none';
+    }, 5000);
+  });
+</script>
+{% endblock %}

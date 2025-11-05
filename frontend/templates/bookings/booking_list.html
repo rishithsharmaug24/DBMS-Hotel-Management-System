@@ -1,0 +1,342 @@
+{% extends "base.html" %}
+
+{% block title %}All Bookings - Hotel Management System{% endblock %}
+
+{% block page_icon %}<i class="fas fa-calendar-alt"></i>{% endblock %}
+{% block page_title %}Booking Management{% endblock %}
+{% block page_subtitle %}
+  View and manage all hotel bookings
+{% endblock %}
+
+{% block breadcrumb %}
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
+    <li class="breadcrumb-item active">Bookings</li>
+  </ol>
+{% endblock %}
+
+{% block content %}
+
+<!-- Success/Error Messages -->
+{% if session.get('success_message') %}
+  <div class="alert alert-success alert-dismissible fade show" role="alert">
+    <i class="fas fa-check-circle"></i> {{ session.get('success_message') }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+{% endif %}
+
+<!-- Quick Statistics -->
+<div class="row mb-4">
+  <div class="col-md-3">
+    <div class="card text-center shadow-sm">
+      <div class="card-body">
+        <h6 class="text-muted mb-2">Total Bookings</h6>
+        <h2 class="text-primary">{{ total_bookings or '0' }}</h2>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center shadow-sm">
+      <div class="card-body">
+        <h6 class="text-muted mb-2">Confirmed</h6>
+        <h2 class="text-success">{{ confirmed_bookings or '0' }}</h2>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center shadow-sm">
+      <div class="card-body">
+        <h6 class="text-muted mb-2">Checked-In</h6>
+        <h2 class="text-info">{{ checkedin_bookings or '0' }}</h2>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center shadow-sm">
+      <div class="card-body">
+        <h6 class="text-muted mb-2">Today's Check-ins</h6>
+        <h2 class="text-warning">{{ today_checkins or '0' }}</h2>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Filters and Search -->
+<div class="card shadow mb-4">
+  <div class="card-body">
+    <div class="row align-items-end">
+      
+      <!-- Search -->
+      <div class="col-md-4 mb-3 mb-md-0">
+        <label class="form-label">Search</label>
+        <div class="input-group">
+          <input type="text" class="form-control" id="searchInput" placeholder="Guest name, booking ID..." onkeyup="filterBookings()">
+          <button class="btn btn-outline-primary" type="button" onclick="clearSearch()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Status Filter -->
+      <div class="col-md-3 mb-3 mb-md-0">
+        <label class="form-label">Status</label>
+        <select class="form-select" id="statusFilter" onchange="filterBookings()">
+          <option value="">-- All Status --</option>
+          <option value="Confirmed">Confirmed</option>
+          <option value="Checked-In">Checked-In</option>
+          <option value="Checked-Out">Checked-Out</option>
+          <option value="Cancelled">Cancelled</option>
+        </select>
+      </div>
+
+      <!-- Date Filter -->
+      <div class="col-md-3 mb-3 mb-md-0">
+        <label class="form-label">Period</label>
+        <select class="form-select" id="periodFilter" onchange="filterBookings()">
+          <option value="">-- All Time --</option>
+          <option value="today">Today</option>
+          <option value="week">This Week</option>
+          <option value="month">This Month</option>
+        </select>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="col-md-2">
+        <a href="/bookings/create" class="btn btn-primary w-100">
+          <i class="fas fa-plus"></i> New Booking
+        </a>
+      </div>
+
+    </div>
+
+    <!-- Quick Filters -->
+    <div class="row mt-3">
+      <div class="col-12">
+        <button class="btn btn-sm btn-outline-success me-2" onclick="quickFilter('Confirmed')">
+          <i class="fas fa-check"></i> Confirmed
+        </button>
+        <button class="btn btn-sm btn-outline-info me-2" onclick="quickFilter('Checked-In')">
+          <i class="fas fa-sign-in-alt"></i> Checked-In
+        </button>
+        <button class="btn btn-sm btn-outline-warning me-2" onclick="quickFilter('today')">
+          <i class="fas fa-calendar-day"></i> Today's Check-ins
+        </button>
+        <button class="btn btn-sm btn-outline-secondary" onclick="resetFilters()">
+          <i class="fas fa-redo"></i> Reset
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bookings Table -->
+<div class="card shadow">
+  <div class="card-header">
+    <h5 class="mb-0">All Bookings</h5>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0" id="bookingsTable">
+        <thead class="table-light">
+          <tr>
+            <th>Booking ID</th>
+            <th>Guest Name</th>
+            <th>Room</th>
+            <th>Check-in</th>
+            <th>Check-out</th>
+            <th>Nights</th>
+            <th>Status</th>
+            <th>Amount</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if bookings %}
+            {% for booking in bookings %}
+              <tr class="booking-row" data-status="{{ booking.status }}" data-guest="{{ booking.guest_name|lower }}">
+                <td><strong>#{{ booking.booking_id }}</strong></td>
+                <td>
+                  <a href="/guests/{{ booking.guest_id }}">{{ booking.guest_name }}</a>
+                </td>
+                <td>
+                  <a href="/rooms/{{ booking.room_id }}">Room {{ booking.room_number }}</a>
+                  <br><small class="text-muted">{{ booking.room_type }}</small>
+                </td>
+                <td>{{ booking.check_in_date.strftime('%d %b %Y') }}</td>
+                <td>{{ booking.check_out_date.strftime('%d %b %Y') }}</td>
+                <td>{{ booking.total_nights }}</td>
+                <td>
+                  {% if booking.status == 'Confirmed' %}
+                    <span class="badge bg-success">Confirmed</span>
+                  {% elif booking.status == 'Checked-In' %}
+                    <span class="badge bg-info">Checked-In</span>
+                  {% elif booking.status == 'Checked-Out' %}
+                    <span class="badge bg-secondary">Checked-Out</span>
+                  {% elif booking.status == 'Cancelled' %}
+                    <span class="badge bg-danger">Cancelled</span>
+                  {% endif %}
+                </td>
+                <td><strong>₹{{ booking.total_amount }}</strong></td>
+                <td>
+                  <div class="btn-group btn-group-sm" role="group">
+                    <a href="/bookings/{{ booking.booking_id }}" class="btn btn-outline-primary" title="View Details">
+                      <i class="fas fa-eye"></i>
+                    </a>
+                    {% if booking.status == 'Confirmed' %}
+                      <a href="/bookings/{{ booking.booking_id }}/modify" class="btn btn-outline-warning" title="Modify">
+                        <i class="fas fa-edit"></i>
+                      </a>
+                      <button type="button" class="btn btn-outline-success" onclick="checkIn({{ booking.booking_id }})" title="Check-in">
+                        <i class="fas fa-sign-in-alt"></i>
+                      </button>
+                      <button type="button" class="btn btn-outline-danger" onclick="cancelBooking({{ booking.booking_id }})" title="Cancel">
+                        <i class="fas fa-times"></i>
+                      </button>
+                    {% elif booking.status == 'Checked-In' %}
+                      <button type="button" class="btn btn-outline-secondary" onclick="checkOut({{ booking.booking_id }})" title="Check-out">
+                        <i class="fas fa-sign-out-alt"></i>
+                      </button>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="9" class="text-center text-muted py-4">
+                <i class="fas fa-inbox" style="font-size: 2rem; opacity: 0.3;"></i>
+                <p class="mt-2 mb-0">No bookings found</p>
+              </td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Pagination -->
+{% if total_pages > 1 %}
+<nav aria-label="Bookings pagination" class="mt-4">
+  <ul class="pagination justify-content-center">
+    {% if current_page > 1 %}
+      <li class="page-item">
+        <a class="page-link" href="/bookings?page=1">First</a>
+      </li>
+      <li class="page-item">
+        <a class="page-link" href="/bookings?page={{ current_page - 1 }}">Previous</a>
+      </li>
+    {% endif %}
+
+    {% for page_num in range(max(1, current_page - 2), min(total_pages + 1, current_page + 3)) %}
+      {% if page_num == current_page %}
+        <li class="page-item active">
+          <span class="page-link">{{ page_num }}</span>
+        </li>
+      {% else %}
+        <li class="page-item">
+          <a class="page-link" href="/bookings?page={{ page_num }}">{{ page_num }}</a>
+        </li>
+      {% endif %}
+    {% endfor %}
+
+    {% if current_page < total_pages %}
+      <li class="page-item">
+        <a class="page-link" href="/bookings?page={{ current_page + 1 }}">Next</a>
+      </li>
+      <li class="page-item">
+        <a class="page-link" href="/bookings?page={{ total_pages }}">Last</a>
+      </li>
+    {% endif %}
+  </ul>
+</nav>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Filter bookings
+  function filterBookings() {
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    const status = document.getElementById('statusFilter').value;
+    const rows = document.querySelectorAll('.booking-row');
+    
+    rows.forEach(row => {
+      let show = true;
+      
+      // Search filter
+      if (search && !row.textContent.toLowerCase().includes(search)) {
+        show = false;
+      }
+      
+      // Status filter
+      if (status && row.dataset.status !== status) {
+        show = false;
+      }
+      
+      row.style.display = show ? '' : 'none';
+    });
+  }
+
+  // Quick filter
+  function quickFilter(type) {
+    document.getElementById('statusFilter').value = type === 'today' ? '' : type;
+    filterBookings();
+  }
+
+  // Reset filters
+  function resetFilters() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('statusFilter').value = '';
+    document.getElementById('periodFilter').value = '';
+    filterBookings();
+  }
+
+  // Clear search
+  function clearSearch() {
+    document.getElementById('searchInput').value = '';
+    filterBookings();
+  }
+
+  // Check-in
+  function checkIn(bookingId) {
+    if (confirm('Check-in this guest?')) {
+      fetch(`/api/bookings/${bookingId}/checkin`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'}
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          alert('Guest checked in successfully');
+          location.reload();
+        } else {
+          alert('Error: ' + data.error);
+        }
+      });
+    }
+  }
+
+  // Check-out
+  function checkOut(bookingId) {
+    if (confirm('Check-out this guest?')) {
+      window.location.href = `/bookings/${bookingId}/checkout`;
+    }
+  }
+
+  // Cancel booking
+  function cancelBooking(bookingId) {
+    if (confirm('Are you sure you want to cancel this booking?')) {
+      window.location.href = `/bookings/${bookingId}/cancel`;
+    }
+  }
+
+  // Auto-dismiss alerts
+  setTimeout(() => {
+    document.querySelectorAll('.alert').forEach(alert => {
+      alert.style.display = 'none';
+    });
+  }, 5000);
+</script>
+{% endblock %}

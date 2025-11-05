@@ -1,0 +1,433 @@
+{% extends "base.html" %}
+
+{% block title %}Create New Booking - Hotel Management System{% endblock %}
+
+{% block page_icon %}<i class="fas fa-calendar-plus"></i>{% endblock %}
+{% block page_title %}Create New Booking{% endblock %}
+{% block page_subtitle %}
+  Book a room for a guest
+{% endblock %}
+
+{% block breadcrumb %}
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
+    <li class="breadcrumb-item"><a href="/bookings">Bookings</a></li>
+    <li class="breadcrumb-item active">Create Booking</li>
+  </ol>
+{% endblock %}
+
+{% block content %}
+
+<!-- Success/Error Messages -->
+{% if session.get('success_message') %}
+  <div class="alert alert-success alert-dismissible fade show" role="alert">
+    <i class="fas fa-check-circle"></i> {{ session.get('success_message') }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+{% endif %}
+
+{% if session.get('error_message') %}
+  <div class="alert alert-danger alert-dismissible fade show" role="alert">
+    <i class="fas fa-exclamation-circle"></i> {{ session.get('error_message') }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+{% endif %}
+
+<div class="row">
+
+  <!-- Booking Form (Left Column) -->
+  <div class="col-lg-8">
+    <div class="card shadow">
+      <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-calendar-plus"></i> Booking Information</h5>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="/bookings/create" id="bookingForm">
+          
+          <!-- Step 1: Guest Selection -->
+          <div class="mb-4">
+            <h6 class="text-primary border-bottom pb-2">Step 1: Select Guest</h6>
+            
+            <div class="row">
+              <div class="col-md-8 mb-3">
+                <label class="form-label">Guest <span class="text-danger">*</span></label>
+                <select class="form-select" name="guest_id" id="guestSelect" required onchange="loadGuestInfo()">
+                  <option value="">-- Select Guest --</option>
+                  {% for guest in guests %}
+                    <option value="{{ guest.guest_id }}" data-email="{{ guest.email }}" data-phone="{{ guest.phone }}">
+                      {{ guest.name }} (ID: {{ guest.guest_id }})
+                    </option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-md-4 mb-3">
+                <label class="form-label">&nbsp;</label>
+                <a href="/guests/register" class="btn btn-outline-primary w-100">
+                  <i class="fas fa-user-plus"></i> New Guest
+                </a>
+              </div>
+            </div>
+
+            <!-- Guest Info Display -->
+            <div id="guestInfo" class="alert alert-info" style="display: none;">
+              <strong>Guest Details:</strong><br>
+              Email: <span id="guestEmail">--</span><br>
+              Phone: <span id="guestPhone">--</span>
+            </div>
+          </div>
+
+          <!-- Step 2: Room Selection -->
+          <div class="mb-4">
+            <h6 class="text-primary border-bottom pb-2">Step 2: Select Room</h6>
+            
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Room Type</label>
+                <select class="form-select" id="roomTypeFilter" onchange="filterRooms()">
+                  <option value="">-- All Types --</option>
+                  <option value="Standard">Standard</option>
+                  <option value="Deluxe">Deluxe</option>
+                  <option value="Suite">Suite</option>
+                  <option value="Premium">Premium</option>
+                </select>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Price Range</label>
+                <select class="form-select" id="priceFilter" onchange="filterRooms()">
+                  <option value="">-- All Prices --</option>
+                  <option value="budget">Budget (< ₹2000)</option>
+                  <option value="standard">Standard (₹2000-3500)</option>
+                  <option value="premium">Premium (₹3500-5000)</option>
+                  <option value="luxury">Luxury (> ₹5000)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-12 mb-3">
+                <label class="form-label">Available Rooms <span class="text-danger">*</span></label>
+                <div class="border rounded p-3" style="max-height: 300px; overflow-y: auto;">
+                  <div class="row" id="roomSelection">
+                    {% for room in available_rooms %}
+                      <div class="col-md-6 mb-2 room-option" data-room-type="{{ room.room_type }}" data-room-price="{{ room.price_per_night }}">
+                        <input type="radio" class="btn-check" name="room_id" id="room{{ room.room_id }}" value="{{ room.room_id }}" required onchange="updateRoomInfo({{ room.room_id }}, '{{ room.room_type }}', {{ room.price_per_night }})">
+                        <label class="btn btn-outline-success w-100 text-start" for="room{{ room.room_id }}">
+                          <strong>Room {{ room.room_number }}</strong><br>
+                          <small>{{ room.room_type }} - ₹{{ room.price_per_night }}/night</small>
+                        </label>
+                      </div>
+                    {% endfor %}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Selected Room Display -->
+            <div id="roomInfo" class="alert alert-success" style="display: none;">
+              <strong>Selected Room:</strong><br>
+              Room: <span id="selectedRoom">--</span><br>
+              Type: <span id="selectedType">--</span><br>
+              Price: ₹<span id="selectedPrice">--</span>/night
+            </div>
+          </div>
+
+          <!-- Step 3: Booking Dates -->
+          <div class="mb-4">
+            <h6 class="text-primary border-bottom pb-2">Step 3: Booking Dates</h6>
+            
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Check-in Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" name="check_in_date" id="checkInDate" required min="{{ today }}" onchange="calculateNights()">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Check-out Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" name="check_out_date" id="checkOutDate" required min="{{ today }}" onchange="calculateNights()">
+              </div>
+            </div>
+
+            <!-- Nights Display -->
+            <div id="nightsInfo" class="alert alert-info" style="display: none;">
+              <strong>Duration:</strong> <span id="totalNights">0</span> night(s)
+            </div>
+          </div>
+
+          <!-- Step 4: Additional Information -->
+          <div class="mb-4">
+            <h6 class="text-primary border-bottom pb-2">Step 4: Additional Information</h6>
+            
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Number of Adults <span class="text-danger">*</span></label>
+                <input type="number" class="form-control" name="num_adults" value="1" min="1" max="10" required>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Number of Children</label>
+                <input type="number" class="form-control" name="num_children" value="0" min="0" max="10">
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Special Requests</label>
+              <textarea class="form-control" name="special_requests" rows="3" placeholder="Any special requirements or requests..."></textarea>
+            </div>
+          </div>
+
+          <!-- Step 5: Payment Method -->
+          <div class="mb-4">
+            <h6 class="text-primary border-bottom pb-2">Step 5: Initial Payment</h6>
+            
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Payment Method <span class="text-danger">*</span></label>
+                <select class="form-select" name="payment_method" required>
+                  <option value="">-- Select Method --</option>
+                  <option value="Cash">Cash</option>
+                  <option value="Credit Card">Credit Card</option>
+                  <option value="Debit Card">Debit Card</option>
+                  <option value="UPI">UPI</option>
+                  <option value="Net Banking">Net Banking</option>
+                </select>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Advance Payment Amount</label>
+                <input type="number" class="form-control" name="advance_amount" placeholder="0" min="0" step="0.01">
+                <small class="text-muted">Optional: Pay advance now</small>
+              </div>
+            </div>
+          </div>
+
+          <!-- Submit Buttons -->
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-check"></i> Create Booking
+            </button>
+            <button type="reset" class="btn btn-outline-secondary" onclick="resetForm()">
+              <i class="fas fa-redo"></i> Reset
+            </button>
+            <a href="/bookings" class="btn btn-outline-secondary">
+              <i class="fas fa-times"></i> Cancel
+            </a>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Booking Summary (Right Column) -->
+  <div class="col-lg-4">
+    
+    <!-- Booking Summary Card -->
+    <div class="card shadow mb-4">
+      <div class="card-header bg-success text-white">
+        <h5 class="mb-0"><i class="fas fa-calculator"></i> Booking Summary</h5>
+      </div>
+      <div class="card-body">
+        
+        <div class="mb-3">
+          <strong>Guest:</strong>
+          <p class="mb-0" id="summaryGuest">Not selected</p>
+        </div>
+
+        <div class="mb-3">
+          <strong>Room:</strong>
+          <p class="mb-0" id="summaryRoom">Not selected</p>
+        </div>
+
+        <div class="mb-3">
+          <strong>Check-in:</strong>
+          <p class="mb-0" id="summaryCheckIn">Not selected</p>
+        </div>
+
+        <div class="mb-3">
+          <strong>Check-out:</strong>
+          <p class="mb-0" id="summaryCheckOut">Not selected</p>
+        </div>
+
+        <hr>
+
+        <div class="mb-2">
+          <div class="d-flex justify-content-between">
+            <span>Nights:</span>
+            <strong id="summaryNights">0</strong>
+          </div>
+        </div>
+
+        <div class="mb-2">
+          <div class="d-flex justify-content-between">
+            <span>Rate/Night:</span>
+            <strong>₹<span id="summaryRate">0</span></strong>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <div class="d-flex justify-content-between">
+            <span>Room Charges:</span>
+            <strong>₹<span id="summaryRoomCharges">0</span></strong>
+          </div>
+        </div>
+
+        <hr>
+
+        <div class="mb-0">
+          <div class="d-flex justify-content-between">
+            <h5>Total Amount:</h5>
+            <h5 class="text-success">₹<span id="summaryTotal">0</span></h5>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Quick Tips Card -->
+    <div class="card shadow">
+      <div class="card-header bg-info text-white">
+        <h6 class="mb-0"><i class="fas fa-lightbulb"></i> Booking Tips</h6>
+      </div>
+      <div class="card-body">
+        <ul class="small mb-0">
+          <li>Ensure guest details are accurate</li>
+          <li>Check room availability for dates</li>
+          <li>Verify check-in and check-out dates</li>
+          <li>Special requests are optional</li>
+          <li>Advance payment is optional</li>
+          <li>Balance can be paid at check-in</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  let selectedRoomPrice = 0;
+
+  // Load guest info
+  function loadGuestInfo() {
+    const select = document.getElementById('guestSelect');
+    const option = select.options[select.selectedIndex];
+    
+    if (option.value) {
+      document.getElementById('guestEmail').textContent = option.dataset.email || '--';
+      document.getElementById('guestPhone').textContent = option.dataset.phone || '--';
+      document.getElementById('guestInfo').style.display = 'block';
+      document.getElementById('summaryGuest').textContent = option.text;
+    } else {
+      document.getElementById('guestInfo').style.display = 'none';
+      document.getElementById('summaryGuest').textContent = 'Not selected';
+    }
+  }
+
+  // Update room info
+  function updateRoomInfo(roomId, roomType, price) {
+    selectedRoomPrice = price;
+    document.getElementById('selectedRoom').textContent = 'Room ' + roomId;
+    document.getElementById('selectedType').textContent = roomType;
+    document.getElementById('selectedPrice').textContent = price;
+    document.getElementById('roomInfo').style.display = 'block';
+    
+    document.getElementById('summaryRoom').textContent = 'Room ' + roomId + ' (' + roomType + ')';
+    document.getElementById('summaryRate').textContent = price;
+    calculateTotal();
+  }
+
+  // Calculate nights
+  function calculateNights() {
+    const checkIn = document.getElementById('checkInDate').value;
+    const checkOut = document.getElementById('checkOutDate').value;
+    
+    if (checkIn && checkOut) {
+      const date1 = new Date(checkIn);
+      const date2 = new Date(checkOut);
+      const diffTime = date2 - date1;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays > 0) {
+        document.getElementById('totalNights').textContent = diffDays;
+        document.getElementById('nightsInfo').style.display = 'block';
+        document.getElementById('summaryNights').textContent = diffDays;
+        document.getElementById('summaryCheckIn').textContent = new Date(checkIn).toLocaleDateString();
+        document.getElementById('summaryCheckOut').textContent = new Date(checkOut).toLocaleDateString();
+        calculateTotal();
+      } else {
+        alert('Check-out date must be after check-in date');
+        document.getElementById('checkOutDate').value = '';
+      }
+    }
+  }
+
+  // Calculate total
+  function calculateTotal() {
+    const nights = parseInt(document.getElementById('summaryNights').textContent) || 0;
+    const rate = selectedRoomPrice;
+    const total = nights * rate;
+    
+    document.getElementById('summaryRoomCharges').textContent = total;
+    document.getElementById('summaryTotal').textContent = total;
+  }
+
+  // Filter rooms
+  function filterRooms() {
+    const typeFilter = document.getElementById('roomTypeFilter').value;
+    const priceFilter = document.getElementById('priceFilter').value;
+    const rooms = document.querySelectorAll('.room-option');
+    
+    rooms.forEach(room => {
+      let show = true;
+      
+      if (typeFilter && room.dataset.roomType !== typeFilter) {
+        show = false;
+      }
+      
+      if (priceFilter) {
+        const price = parseInt(room.dataset.roomPrice);
+        if (priceFilter === 'budget' && price >= 2000) show = false;
+        if (priceFilter === 'standard' && (price < 2000 || price >= 3500)) show = false;
+        if (priceFilter === 'premium' && (price < 3500 || price > 5000)) show = false;
+        if (priceFilter === 'luxury' && price <= 5000) show = false;
+      }
+      
+      room.style.display = show ? '' : 'none';
+    });
+  }
+
+  // Reset form
+  function resetForm() {
+    document.getElementById('guestInfo').style.display = 'none';
+    document.getElementById('roomInfo').style.display = 'none';
+    document.getElementById('nightsInfo').style.display = 'none';
+    document.getElementById('summaryGuest').textContent = 'Not selected';
+    document.getElementById('summaryRoom').textContent = 'Not selected';
+    document.getElementById('summaryCheckIn').textContent = 'Not selected';
+    document.getElementById('summaryCheckOut').textContent = 'Not selected';
+    document.getElementById('summaryNights').textContent = '0';
+    document.getElementById('summaryRate').textContent = '0';
+    document.getElementById('summaryRoomCharges').textContent = '0';
+    document.getElementById('summaryTotal').textContent = '0';
+    selectedRoomPrice = 0;
+  }
+
+  // Form validation
+  document.getElementById('bookingForm').addEventListener('submit', function(e) {
+    const checkIn = new Date(document.getElementById('checkInDate').value);
+    const checkOut = new Date(document.getElementById('checkOutDate').value);
+    
+    if (checkOut <= checkIn) {
+      e.preventDefault();
+      alert('Check-out date must be after check-in date');
+    }
+  });
+
+  // Auto-dismiss alerts
+  setTimeout(() => {
+    document.querySelectorAll('.alert').forEach(alert => {
+      alert.style.display = 'none';
+    });
+  }, 5000);
+</script>
+{% endblock %}

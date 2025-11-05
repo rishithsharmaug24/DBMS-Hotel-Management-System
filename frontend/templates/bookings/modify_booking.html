@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+
+{% block title %}Modify Booking - Hotel Management System{% endblock %}
+
+{% block page_icon %}<i class="fas fa-edit"></i>{% endblock %}
+{% block page_title %}Modify Booking{% endblock %}
+{% block page_subtitle %}
+  Update booking information
+{% endblock %}
+
+{% block breadcrumb %}
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
+    <li class="breadcrumb-item"><a href="/bookings">Bookings</a></li>
+    <li class="breadcrumb-item"><a href="/bookings/{{ booking.booking_id }}">Booking #{{ booking.booking_id }}</a></li>
+    <li class="breadcrumb-item active">Modify</li>
+  </ol>
+{% endblock %}
+
+{% block content %}
+
+{% if booking %}
+
+<!-- Warning Message -->
+<div class="alert alert-warning" role="alert">
+  <i class="fas fa-exclamation-triangle"></i> 
+  <strong>Note:</strong> Modifying booking dates may affect room availability and total charges.
+</div>
+
+<div class="row">
+
+  <!-- Modify Form (Left Column) -->
+  <div class="col-lg-8">
+    <div class="card shadow">
+      <div class="card-header bg-warning text-dark">
+        <h5 class="mb-0"><i class="fas fa-edit"></i> Modify Booking #{{ booking.booking_id }}</h5>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="/bookings/{{ booking.booking_id }}/modify" id="modifyForm">
+          
+          <!-- Current Booking Info (Read-only) -->
+          <div class="mb-4">
+            <h6 class="text-muted border-bottom pb-2">Current Booking Information</h6>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Guest</label>
+                <p class="form-control-plaintext">{{ booking.guest_name }}</p>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Room</label>
+                <p class="form-control-plaintext">Room {{ booking.room_number }} ({{ booking.room_type }})</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Modify Dates -->
+          <div class="mb-4">
+            <h6 class="text-primary border-bottom pb-2">Modify Dates</h6>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Check-in Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" name="check_in_date" id="checkInDate" 
+                       value="{{ booking.check_in_date.strftime('%Y-%m-%d') }}" 
+                       min="{{ today }}" required onchange="calculateNights()">
+                <small class="text-muted">Current: {{ booking.check_in_date.strftime('%d %b %Y') }}</small>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Check-out Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" name="check_out_date" id="checkOutDate" 
+                       value="{{ booking.check_out_date.strftime('%Y-%m-%d') }}" 
+                       min="{{ today }}" required onchange="calculateNights()">
+                <small class="text-muted">Current: {{ booking.check_out_date.strftime('%d %b %Y') }}</small>
+              </div>
+            </div>
+            <div id="nightsInfo" class="alert alert-info">
+              <strong>New Duration:</strong> <span id="totalNights">{{ booking.total_nights }}</span> night(s)
+            </div>
+          </div>
+
+          <!-- Modify Room (Optional) -->
+          <div class="mb-4">
+            <h6 class="text-primary border-bottom pb-2">Change Room (Optional)</h6>
+            <div class="form-check mb-3">
+              <input class="form-check-input" type="checkbox" id="changeRoom" onchange="toggleRoomSelection()">
+              <label class="form-check-label" for="changeRoom">
+                I want to change the room
+              </label>
+            </div>
+            
+            <div id="roomSelection" style="display: none;">
+              <label class="form-label">Select New Room</label>
+              <div class="border rounded p-3" style="max-height: 250px; overflow-y: auto;">
+                <div class="row">
+                  {% for room in available_rooms %}
+                    <div class="col-md-6 mb-2">
+                      <input type="radio" class="btn-check" name="room_id" id="room{{ room.room_id }}" 
+                             value="{{ room.room_id }}">
+                      <label class="btn btn-outline-success w-100 text-start" for="room{{ room.room_id }}">
+                        <strong>Room {{ room.room_number }}</strong><br>
+                        <small>{{ room.room_type }} - ₹{{ room.price_per_night }}/night</small>
+                      </label>
+                    </div>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Modify Guest Details -->
+          <div class="mb-4">
+            <h6 class="text-primary border-bottom pb-2">Update Guest Details</h6>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Number of Adults</label>
+                <input type="number" class="form-control" name="num_adults" 
+                       value="{{ booking.num_adults or 1 }}" min="1" max="10">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Number of Children</label>
+                <input type="number" class="form-control" name="num_children" 
+                       value="{{ booking.num_children or 0 }}" min="0" max="10">
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Special Requests</label>
+              <textarea class="form-control" name="special_requests" rows="3">{{ booking.special_requests or '' }}</textarea>
+            </div>
+          </div>
+
+          <!-- Reason for Modification -->
+          <div class="mb-4">
+            <h6 class="text-primary border-bottom pb-2">Reason for Modification</h6>
+            <textarea class="form-control" name="modification_reason" rows="2" 
+                      placeholder="Enter reason for modifying this booking..." required></textarea>
+          </div>
+
+          <!-- Submit Buttons -->
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-warning">
+              <i class="fas fa-check"></i> Save Changes
+            </button>
+            <a href="/bookings/{{ booking.booking_id }}" class="btn btn-outline-secondary">
+              <i class="fas fa-times"></i> Cancel
+            </a>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary (Right Column) -->
+  <div class="col-lg-4">
+    
+    <!-- Original Booking Summary -->
+    <div class="card shadow mb-4">
+      <div class="card-header bg-info text-white">
+        <h6 class="mb-0"><i class="fas fa-info-circle"></i> Original Booking</h6>
+      </div>
+      <div class="card-body">
+        <p class="mb-2"><strong>Guest:</strong><br>{{ booking.guest_name }}</p>
+        <p class="mb-2"><strong>Room:</strong><br>Room {{ booking.room_number }}</p>
+        <p class="mb-2"><strong>Check-in:</strong><br>{{ booking.check_in_date.strftime('%d %b %Y') }}</p>
+        <p class="mb-2"><strong>Check-out:</strong><br>{{ booking.check_out_date.strftime('%d %b %Y') }}</p>
+        <p class="mb-2"><strong>Nights:</strong><br>{{ booking.total_nights }}</p>
+        <hr>
+        <p class="mb-0"><strong>Original Amount:</strong><br>₹{{ booking.total_amount }}</p>
+      </div>
+    </div>
+
+    <!-- Important Notes -->
+    <div class="card shadow">
+      <div class="card-header bg-warning text-dark">
+        <h6 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Important</h6>
+      </div>
+      <div class="card-body">
+        <ul class="small mb-0">
+          <li>Changes will be effective immediately</li>
+          <li>Date changes may affect pricing</li>
+          <li>Room change subject to availability</li>
+          <li>Guest will be notified of changes</li>
+          <li>Modification history will be logged</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function calculateNights() {
+    const checkIn = document.getElementById('checkInDate').value;
+    const checkOut = document.getElementById('checkOutDate').value;
+    
+    if (checkIn && checkOut) {
+      const date1 = new Date(checkIn);
+      const date2 = new Date(checkOut);
+      const diffTime = date2 - date1;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays > 0) {
+        document.getElementById('totalNights').textContent = diffDays;
+      } else {
+        alert('Check-out date must be after check-in date');
+        document.getElementById('checkOutDate').value = '';
+      }
+    }
+  }
+
+  function toggleRoomSelection() {
+    const checkbox = document.getElementById('changeRoom');
+    const selection = document.getElementById('roomSelection');
+    selection.style.display = checkbox.checked ? 'block' : 'none';
+  }
+
+  document.getElementById('modifyForm').addEventListener('submit', function(e) {
+    if (!confirm('Are you sure you want to save these changes?')) {
+      e.preventDefault();
+    }
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,446 @@
+{% extends "base.html" %}
+
+{% block title %}Guest Profile - Hotel Management System{% endblock %}
+
+{% block page_icon %}<i class="fas fa-user-circle"></i>{% endblock %}
+{% block page_title %}Guest Profile{% endblock %}
+{% block page_subtitle %}
+  View and manage guest information
+{% endblock %}
+
+{% block breadcrumb %}
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
+    <li class="breadcrumb-item"><a href="/guests">Guests</a></li>
+    <li class="breadcrumb-item active">Guest Profile</li>
+  </ol>
+{% endblock %}
+
+{% block content %}
+
+<!-- Success/Error Messages -->
+{% if session.get('success_message') %}
+  <div class="alert alert-success alert-dismissible fade show" role="alert">
+    <i class="fas fa-check-circle"></i> {{ session.get('success_message') }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+{% endif %}
+
+{% if session.get('error_message') %}
+  <div class="alert alert-danger alert-dismissible fade show" role="alert">
+    <i class="fas fa-exclamation-circle"></i> {{ session.get('error_message') }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+{% endif %}
+
+{% if guest %}
+
+<!-- Header with Guest Info and Actions -->
+<div class="card shadow mb-4">
+  <div class="card-body">
+    <div class="row align-items-center">
+      <div class="col-md-8">
+        <div class="d-flex align-items-center">
+          <div class="bg-primary text-white rounded-circle p-3 me-3" style="width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; font-size: 2rem;">
+            <i class="fas fa-user"></i>
+          </div>
+          <div>
+            <h2 class="mb-0">{{ guest.name }}</h2>
+            <p class="text-muted mb-1">
+              <i class="fas fa-tag"></i> Guest ID: <strong>#{{ guest.guest_id }}</strong>
+            </p>
+            <p class="text-muted mb-0">
+              <i class="fas fa-calendar"></i> Joined: <strong>{{ guest.created_at.strftime('%d %B %Y') if guest.created_at else '--' }}</strong>
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4 text-end">
+        <a href="/guests/{{ guest.guest_id }}/edit" class="btn btn-primary me-2">
+          <i class="fas fa-edit"></i> Edit Profile
+        </a>
+        <button class="btn btn-outline-secondary" onclick="window.print()">
+          <i class="fas fa-print"></i> Print
+        </button>
+        <a href="/guests" class="btn btn-outline-secondary">
+          <i class="fas fa-arrow-left"></i> Back
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Main Content Sections -->
+<div class="row">
+
+  <!-- Left Column: Personal & Contact Info -->
+  <div class="col-lg-8">
+
+    <!-- Personal Information Section -->
+    <div class="card shadow mb-4">
+      <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-user"></i> Personal Information</h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label text-muted">Full Name</label>
+            <p class="h6">{{ guest.name }}</p>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label text-muted">Email Address</label>
+            <p class="h6">
+              <a href="mailto:{{ guest.email }}">{{ guest.email }}</a>
+            </p>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label text-muted">Gender</label>
+            <p class="h6">{{ guest.gender or '--' }}</p>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label text-muted">Date of Birth</label>
+            <p class="h6">
+              {% if guest.date_of_birth %}
+                {{ guest.date_of_birth.strftime('%d %B %Y') }}
+                <small class="text-muted">(Age: {{ calculate_age(guest.date_of_birth) }})</small>
+              {% else %}
+                --
+              {% endif %}
+            </p>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label text-muted">Nationality</label>
+            <p class="h6">{{ guest.nationality or '--' }}</p>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label text-muted">Occupation</label>
+            <p class="h6">{{ guest.occupation or '--' }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contact Information Section -->
+    <div class="card shadow mb-4">
+      <div class="card-header bg-info text-white">
+        <h5 class="mb-0"><i class="fas fa-phone"></i> Contact Information</h5>
+      </div>
+      <div class="card-body">
+        
+        <!-- Phone Numbers -->
+        <div class="mb-4">
+          <label class="form-label text-muted fw-bold">Phone Numbers</label>
+          {% if guest.phones %}
+            {% for phone in guest.phones %}
+              <div class="mb-2">
+                <span class="badge bg-primary">{{ phone.phone_type }}</span>
+                <a href="tel:{{ phone.phone }}" class="ms-2">
+                  <i class="fas fa-phone"></i> {{ phone.phone }}
+                </a>
+              </div>
+            {% endfor %}
+          {% else %}
+            <p class="text-muted">No phone numbers on file</p>
+          {% endif %}
+        </div>
+
+        <!-- Address -->
+        <div class="mb-3">
+          <label class="form-label text-muted">Address</label>
+          <p class="h6">{{ guest.address or '--' }}</p>
+        </div>
+
+        <!-- City, State, Country -->
+        <div class="row">
+          <div class="col-md-4 mb-3">
+            <label class="form-label text-muted">City</label>
+            <p class="h6">
+              <i class="fas fa-map-marker-alt text-danger"></i> {{ guest.city or '--' }}
+            </p>
+          </div>
+          <div class="col-md-4 mb-3">
+            <label class="form-label text-muted">State</label>
+            <p class="h6">{{ guest.state or '--' }}</p>
+          </div>
+          <div class="col-md-4 mb-3">
+            <label class="form-label text-muted">Country</label>
+            <p class="h6">{{ guest.country or '--' }}</p>
+          </div>
+        </div>
+
+        <!-- Postal Code -->
+        <div class="mb-3">
+          <label class="form-label text-muted">Postal Code</label>
+          <p class="h6">{{ guest.postal_code or '--' }}</p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ID Proof Information Section -->
+    <div class="card shadow mb-4">
+      <div class="card-header bg-warning text-dark">
+        <h5 class="mb-0"><i class="fas fa-id-card"></i> Identification Proof</h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label text-muted">ID Proof Type</label>
+            <p class="h6">
+              <span class="badge bg-warning text-dark">{{ guest.id_proof_type or '--' }}</span>
+            </p>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label text-muted">ID Number</label>
+            <p class="h6">{{ guest.id_proof_number or '--' }}</p>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label text-muted">Issue Date</label>
+            <p class="h6">
+              {% if guest.id_issue_date %}
+                <i class="fas fa-calendar"></i> {{ guest.id_issue_date.strftime('%d %B %Y') }}
+              {% else %}
+                --
+              {% endif %}
+            </p>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label text-muted">Expiry Date</label>
+            <p class="h6">
+              {% if guest.id_expiry_date %}
+                {% if guest.id_expiry_date < today %}
+                  <span class="badge bg-danger">Expired</span> {{ guest.id_expiry_date.strftime('%d %B %Y') }}
+                {% else %}
+                  <i class="fas fa-calendar"></i> {{ guest.id_expiry_date.strftime('%d %B %Y') }}
+                {% endif %}
+              {% else %}
+                --
+              {% endif %}
+            </p>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label text-muted">Status</label>
+            <p class="h6">
+              {% if guest.id_expiry_date and guest.id_expiry_date >= today %}
+                <span class="badge bg-success">Valid</span>
+              {% elif guest.id_expiry_date %}
+                <span class="badge bg-danger">Expired</span>
+              {% else %}
+                <span class="badge bg-secondary">Unknown</span>
+              {% endif %}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Emergency Contact Section -->
+    <div class="card shadow mb-4">
+      <div class="card-header bg-danger text-white">
+        <h5 class="mb-0"><i class="fas fa-phone-square-alt"></i> Emergency Contact</h5>
+      </div>
+      <div class="card-body">
+        {% if guest.emergency_contact_name %}
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label text-muted">Contact Name</label>
+              <p class="h6">{{ guest.emergency_contact_name }}</p>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label text-muted">Relation</label>
+              <p class="h6">{{ guest.emergency_relation or '--' }}</p>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label text-muted">Phone Number</label>
+              <p class="h6">
+                <a href="tel:{{ guest.emergency_contact_phone }}">
+                  <i class="fas fa-phone"></i> {{ guest.emergency_contact_phone }}
+                </a>
+              </p>
+            </div>
+          </div>
+        {% else %}
+          <p class="text-muted">No emergency contact information on file</p>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Right Column: Statistics & Bookings -->
+  <div class="col-lg-4">
+
+    <!-- Guest Statistics Card -->
+    <div class="card shadow mb-4">
+      <div class="card-header bg-success text-white">
+        <h5 class="mb-0"><i class="fas fa-chart-bar"></i> Guest Statistics</h5>
+      </div>
+      <div class="card-body">
+        <div class="mb-3 text-center border-bottom pb-3">
+          <h6 class="text-muted mb-1">Total Bookings</h6>
+          <h2 class="text-success">{{ guest.total_bookings or 0 }}</h2>
+        </div>
+        <div class="mb-3 text-center border-bottom pb-3">
+          <h6 class="text-muted mb-1">Total Spent</h6>
+          <h2 class="text-primary">₹{{ guest.total_spent or '0' }}</h2>
+        </div>
+        <div class="mb-3 text-center border-bottom pb-3">
+          <h6 class="text-muted mb-1">Average Stay</h6>
+          <h2 class="text-info">{{ guest.avg_nights or '--' }} Nights</h2>
+        </div>
+        <div class="mb-0 text-center">
+          <h6 class="text-muted mb-1">Last Booking</h6>
+          <p class="h6">
+            {% if guest.last_booking_date %}
+              {{ guest.last_booking_date.strftime('%d %B %Y') }}
+            {% else %}
+              No bookings yet
+            {% endif %}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Booking History Card -->
+    <div class="card shadow mb-4">
+      <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-calendar-check"></i> Recent Bookings</h5>
+      </div>
+      <div class="card-body p-0">
+        {% if guest.bookings %}
+          <div class="list-group list-group-flush">
+            {% for booking in guest.bookings[:5] %}
+              <a href="/bookings/{{ booking.booking_id }}" class="list-group-item list-group-item-action">
+                <div class="d-flex w-100 justify-content-between align-items-start">
+                  <div>
+                    <h6 class="mb-1">
+                      <strong>#{{ booking.booking_id }}</strong>
+                      {% if booking.status == 'Confirmed' %}
+                        <span class="badge bg-success">Confirmed</span>
+                      {% elif booking.status == 'Checked-In' %}
+                        <span class="badge bg-info">Checked-In</span>
+                      {% elif booking.status == 'Checked-Out' %}
+                        <span class="badge bg-secondary">Checked-Out</span>
+                      {% elif booking.status == 'Cancelled' %}
+                        <span class="badge bg-danger">Cancelled</span>
+                      {% endif %}
+                    </h6>
+                    <small class="text-muted">
+                      <i class="fas fa-door-open"></i> Room {{ booking.room_number }} ({{ booking.room_type }})
+                    </small>
+                  </div>
+                  <div class="text-end">
+                    <small class="text-muted">
+                      {{ booking.check_in_date.strftime('%d %b') }} - {{ booking.check_out_date.strftime('%d %b') }}
+                    </small>
+                    <p class="mb-0 fw-bold">₹{{ booking.total_amount or '0' }}</p>
+                  </div>
+                </div>
+              </a>
+            {% endfor %}
+          </div>
+          {% if guest.bookings|length > 5 %}
+            <div class="p-3 text-center border-top">
+              <a href="/guests/{{ guest.guest_id }}/bookings" class="btn btn-sm btn-outline-primary">
+                View All Bookings ({{ guest.bookings|length }} total)
+              </a>
+            </div>
+          {% endif %}
+        {% else %}
+          <div class="p-3 text-center text-muted">
+            <i class="fas fa-calendar-times" style="font-size: 1.5rem; opacity: 0.3;"></i>
+            <p class="mt-2 mb-0">No bookings yet</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Notes Card -->
+    <div class="card shadow">
+      <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0"><i class="fas fa-sticky-note"></i> Special Notes</h5>
+      </div>
+      <div class="card-body">
+        {% if guest.special_notes %}
+          <p>{{ guest.special_notes }}</p>
+        {% else %}
+          <p class="text-muted">No special notes on file</p>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- Action Buttons Footer -->
+<div class="row mt-4 mb-4">
+  <div class="col-12">
+    <div class="d-flex gap-2">
+      <a href="/guests/{{ guest.guest_id }}/edit" class="btn btn-primary">
+        <i class="fas fa-edit"></i> Edit Profile
+      </a>
+      <a href="/guests/{{ guest.guest_id }}/bookings" class="btn btn-info">
+        <i class="fas fa-calendar-check"></i> View All Bookings
+      </a>
+      <button class="btn btn-outline-secondary" onclick="window.print()">
+        <i class="fas fa-print"></i> Print Profile
+      </button>
+      <a href="/guests" class="btn btn-outline-secondary ms-auto">
+        <i class="fas fa-arrow-left"></i> Back to Guest List
+      </a>
+    </div>
+  </div>
+</div>
+
+{% else %}
+
+<!-- Guest Not Found -->
+<div class="alert alert-danger" role="alert">
+  <h4 class="alert-heading"><i class="fas fa-exclamation-circle"></i> Guest Not Found</h4>
+  <p>The guest profile you're looking for doesn't exist or has been deleted.</p>
+  <hr>
+  <p class="mb-0">
+    <a href="/guests" class="btn btn-sm btn-outline-primary">
+      <i class="fas fa-arrow-left"></i> Back to Guest List
+    </a>
+  </p>
+</div>
+
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Print functionality
+  function printProfile() {
+    window.print();
+  }
+
+  // Auto-hide alerts
+  document.querySelectorAll('.alert').forEach(alert => {
+    setTimeout(() => {
+      alert.style.display = 'none';
+    }, 5000);
+  });
+
+  // Print styling
+  const style = document.createElement('style');
+  style.textContent = `
+    @media print {
+      .btn, .card-header .btn, nav, .breadcrumb {
+        display: none;
+      }
+      .card {
+        box-shadow: none !important;
+        border: 1px solid #dee2e6;
+      }
+      body {
+        background-color: white;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+</script>
+{% endblock %}

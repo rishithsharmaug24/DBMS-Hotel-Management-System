@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+
+{% block title %}Cancel Booking - Hotel Management System{% endblock %}
+
+{% block page_icon %}<i class="fas fa-times-circle"></i>{% endblock %}
+{% block page_title %}Cancel Booking{% endblock %}
+{% block page_subtitle %}
+  Cancel booking and process refund
+{% endblock %}
+
+{% block breadcrumb %}
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
+    <li class="breadcrumb-item"><a href="/bookings">Bookings</a></li>
+    <li class="breadcrumb-item"><a href="/bookings/{{ booking.booking_id }}">Booking #{{ booking.booking_id }}</a></li>
+    <li class="breadcrumb-item active">Cancel</li>
+  </ol>
+{% endblock %}
+
+{% block content %}
+
+{% if booking %}
+
+<!-- Warning Message -->
+<div class="alert alert-danger" role="alert">
+  <h4 class="alert-heading"><i class="fas fa-exclamation-triangle"></i> Warning: Booking Cancellation</h4>
+  <p>You are about to cancel this booking. This action cannot be undone easily.</p>
+  <hr>
+  <p class="mb-0">Please review the cancellation details and refund policy before proceeding.</p>
+</div>
+
+<div class="row">
+
+  <!-- Cancellation Form (Left Column) -->
+  <div class="col-lg-8">
+    <div class="card shadow">
+      <div class="card-header bg-danger text-white">
+        <h5 class="mb-0"><i class="fas fa-times-circle"></i> Cancel Booking #{{ booking.booking_id }}</h5>
+      </div>
+      <div class="card-body">
+        
+        <!-- Booking Information -->
+        <div class="mb-4">
+          <h6 class="text-danger border-bottom pb-2">Booking to be Cancelled</h6>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label text-muted">Guest Name</label>
+              <p class="h6">{{ booking.guest_name }}</p>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label text-muted">Room</label>
+              <p class="h6">Room {{ booking.room_number }} ({{ booking.room_type }})</p>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label text-muted">Check-in Date</label>
+              <p class="h6">{{ booking.check_in_date.strftime('%d %b %Y') }}</p>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label text-muted">Check-out Date</label>
+              <p class="h6">{{ booking.check_out_date.strftime('%d %b %Y') }}</p>
+            </div>
+            <div class="col-md-6 mb-0">
+              <label class="form-label text-muted">Total Amount</label>
+              <p class="h5 text-danger">₹{{ booking.total_amount }}</p>
+            </div>
+            <div class="col-md-6 mb-0">
+              <label class="form-label text-muted">Amount Paid</label>
+              <p class="h5 text-success">₹{{ booking.amount_paid or 0 }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cancellation Form -->
+        <form method="POST" action="/bookings/{{ booking.booking_id }}/cancel" id="cancelForm">
+          
+          <!-- Cancellation Reason -->
+          <div class="mb-4">
+            <h6 class="text-danger border-bottom pb-2">Cancellation Details</h6>
+            <div class="mb-3">
+              <label class="form-label">Reason for Cancellation <span class="text-danger">*</span></label>
+              <select class="form-select" name="cancellation_reason" required onchange="showOtherReason()">
+                <option value="">-- Select Reason --</option>
+                <option value="Guest Request">Guest Request</option>
+                <option value="Change of Plans">Change of Plans</option>
+                <option value="Emergency">Emergency</option>
+                <option value="Payment Issue">Payment Issue</option>
+                <option value="Room Issue">Room Issue</option>
+                <option value="Duplicate Booking">Duplicate Booking</option>
+                <option value="Other">Other (Please Specify)</option>
+              </select>
+            </div>
+            
+            <div class="mb-3" id="otherReasonDiv" style="display: none;">
+              <label class="form-label">Please Specify</label>
+              <input type="text" class="form-control" name="other_reason" placeholder="Specify other reason...">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Additional Notes</label>
+              <textarea class="form-control" name="cancellation_notes" rows="3" 
+                        placeholder="Any additional information..."></textarea>
+            </div>
+          </div>
+
+          <!-- Refund Information -->
+          <div class="mb-4">
+            <h6 class="text-danger border-bottom pb-2">Refund Information</h6>
+            
+            <div class="alert alert-info">
+              <strong>Refund Policy:</strong>
+              <ul class="mb-0">
+                <li>Cancellation 7+ days before: 100% refund</li>
+                <li>Cancellation 3-6 days before: 50% refund</li>
+                <li>Cancellation 0-2 days before: No refund</li>
+                <li>Administrative fee: ₹500</li>
+              </ul>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Amount Paid</label>
+                <p class="form-control-plaintext text-success">₹{{ booking.amount_paid or 0 }}</p>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Refund Amount</label>
+                <p class="form-control-plaintext text-danger" id="refundAmount">₹0</p>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Refund Method <span class="text-danger">*</span></label>
+              <select class="form-select" name="refund_method" required>
+                <option value="">-- Select Method --</option>
+                <option value="Original Payment Method">Original Payment Method</option>
+                <option value="Cash">Cash</option>
+                <option value="Bank Transfer">Bank Transfer</option>
+                <option value="Credit to Account">Credit to Guest Account</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Confirmation -->
+          <div class="mb-4">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="confirmCancel" required>
+              <label class="form-check-label" for="confirmCancel">
+                I confirm that I want to cancel this booking and understand that this action cannot be easily undone.
+              </label>
+            </div>
+          </div>
+
+          <!-- Submit Buttons -->
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-danger">
+              <i class="fas fa-times-circle"></i> Cancel Booking
+            </button>
+            <a href="/bookings/{{ booking.booking_id }}" class="btn btn-outline-secondary">
+              <i class="fas fa-arrow-left"></i> Go Back
+            </a>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cancellation Summary (Right Column) -->
+  <div class="col-lg-4">
+    
+    <!-- Impact Summary -->
+    <div class="card shadow mb-4">
+      <div class="card-header bg-warning text-dark">
+        <h6 class="mb-0"><i class="fas fa-info-circle"></i> Cancellation Impact</h6>
+      </div>
+      <div class="card-body">
+        <p class="small mb-2">
+          <strong>Guest Notification:</strong><br>
+          Guest will be notified by email
+        </p>
+        <p class="small mb-2">
+          <strong>Room Status:</strong><br>
+          Room will become available immediately
+        </p>
+        <p class="small mb-2">
+          <strong>Refund Processing:</strong><br>
+          Refund will be processed within 3-5 business days
+        </p>
+        <p class="small mb-0">
+          <strong>Record:</strong><br>
+          Cancellation will be logged in history
+        </p>
+      </div>
+    </div>
+
+    <!-- Important Notice -->
+    <div class="card shadow">
+      <div class="card-header bg-danger text-white">
+        <h6 class="mb-0"><i class="fas fa-exclamation-circle"></i> Important</h6>
+      </div>
+      <div class="card-body">
+        <ul class="small text-danger mb-0">
+          <li>This action cannot be undone</li>
+          <li>Room will be released immediately</li>
+          <li>Guest will be notified</li>
+          <li>Refund subject to policy</li>
+          <li>History will be maintained</li>
+          <li>Reports will be updated</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function showOtherReason() {
+    const select = document.querySelector('select[name="cancellation_reason"]');
+    const otherDiv = document.getElementById('otherReasonDiv');
+    otherDiv.style.display = select.value === 'Other' ? 'block' : 'none';
+  }
+
+  // Calculate refund amount based on check-in date
+  function calculateRefund() {
+    const checkInDate = new Date('{{ booking.check_in_date.strftime("%Y-%m-%d") }}');
+    const today = new Date();
+    const diffTime = checkInDate - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const amountPaid = {{ booking.amount_paid or 0 }};
+    
+    let refundPercent = 0;
+    if (diffDays >= 7) {
+      refundPercent = 100;
+    } else if (diffDays >= 3) {
+      refundPercent = 50;
+    } else {
+      refundPercent = 0;
+    }
+    
+    const refund = (amountPaid * refundPercent / 100) - 500; // Minus admin fee
+    document.getElementById('refundAmount').textContent = '₹' + Math.max(0, refund);
+  }
+
+  document.getElementById('cancelForm').addEventListener('submit', function(e) {
+    if (!confirm('Are you absolutely sure you want to cancel this booking?')) {
+      e.preventDefault();
+    }
+  });
+
+  // Calculate refund on page load
+  calculateRefund();
+</script>
+{% endblock %}

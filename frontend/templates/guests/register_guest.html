@@ -1,0 +1,662 @@
+{% extends "base.html" %}
+
+{% block title %}Register Guest - Hotel Management System{% endblock %}
+
+{% block page_icon %}<i class="fas fa-user-plus"></i>{% endblock %}
+{% block page_title %}Guest Registration{% endblock %}
+{% block page_subtitle %}
+  Register new guest for hotel accommodations
+{% endblock %}
+
+{% block breadcrumb %}
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
+    <li class="breadcrumb-item"><a href="/guests">Guests</a></li>
+    <li class="breadcrumb-item active">Register Guest</li>
+  </ol>
+{% endblock %}
+
+{% block content %}
+
+<!-- Success/Error Messages -->
+{% if session.get('success_message') %}
+  <div class="alert alert-success alert-dismissible fade show" role="alert">
+    <i class="fas fa-check-circle"></i> {{ session.get('success_message') }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+{% endif %}
+
+{% if session.get('error_message') %}
+  <div class="alert alert-danger alert-dismissible fade show" role="alert">
+    <i class="fas fa-exclamation-circle"></i> {{ session.get('error_message') }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+{% endif %}
+
+<!-- Main Registration Form -->
+<div class="row">
+  <div class="col-lg-8">
+    <div class="card shadow">
+      <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-form"></i> Guest Information Form</h5>
+      </div>
+      <div class="card-body">
+        <form id="guestRegistrationForm" method="POST" action="/api/guests/register" novalidate>
+          
+          <!-- CSRF Token -->
+          {% if csrf_token %}
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          {% endif %}
+
+          <!-- Personal Information Section -->
+          <div class="mb-4">
+            <h6 class="text-primary mb-3"><i class="fas fa-user"></i> Personal Information</h6>
+            <hr>
+            
+            <!-- First Name & Last Name -->
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="firstName" class="form-label">
+                  <i class="fas fa-font"></i> First Name <span class="text-danger">*</span>
+                </label>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  id="firstName" 
+                  name="first_name"
+                  placeholder="Enter first name"
+                  required
+                  minlength="2"
+                  maxlength="50">
+                <div class="invalid-feedback">First name is required (2-50 characters)</div>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="lastName" class="form-label">
+                  <i class="fas fa-font"></i> Last Name <span class="text-danger">*</span>
+                </label>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  id="lastName" 
+                  name="last_name"
+                  placeholder="Enter last name"
+                  required
+                  minlength="2"
+                  maxlength="50">
+                <div class="invalid-feedback">Last name is required (2-50 characters)</div>
+              </div>
+            </div>
+
+            <!-- Email -->
+            <div class="mb-3">
+              <label for="email" class="form-label">
+                <i class="fas fa-envelope"></i> Email Address <span class="text-danger">*</span>
+              </label>
+              <input 
+                type="email" 
+                class="form-control" 
+                id="email" 
+                name="email"
+                placeholder="Enter email address"
+                required>
+              <small class="form-text text-muted">Used for booking confirmations and receipts</small>
+              <div class="invalid-feedback">Valid email address is required</div>
+            </div>
+
+            <!-- Gender & Age -->
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="gender" class="form-label">
+                  <i class="fas fa-venus-mars"></i> Gender
+                </label>
+                <select class="form-select" id="gender" name="gender">
+                  <option value="">-- Select Gender --</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="dob" class="form-label">
+                  <i class="fas fa-calendar"></i> Date of Birth
+                </label>
+                <input 
+                  type="date" 
+                  class="form-control" 
+                  id="dob" 
+                  name="date_of_birth">
+              </div>
+            </div>
+
+            <!-- Nationality & Occupation -->
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="nationality" class="form-label">
+                  <i class="fas fa-flag"></i> Nationality
+                </label>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  id="nationality" 
+                  name="nationality"
+                  placeholder="e.g., Indian, American"
+                  maxlength="50">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="occupation" class="form-label">
+                  <i class="fas fa-briefcase"></i> Occupation
+                </label>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  id="occupation" 
+                  name="occupation"
+                  placeholder="e.g., Engineer, Doctor"
+                  maxlength="50">
+              </div>
+            </div>
+          </div>
+
+          <!-- Contact Information Section -->
+          <div class="mb-4">
+            <h6 class="text-primary mb-3"><i class="fas fa-phone"></i> Contact Information</h6>
+            <hr>
+
+            <!-- Primary Phone Number -->
+            <div class="mb-3">
+              <label for="primaryPhone" class="form-label">
+                <i class="fas fa-mobile-alt"></i> Primary Phone Number <span class="text-danger">*</span>
+              </label>
+              <div class="input-group">
+                <input 
+                  type="tel" 
+                  class="form-control" 
+                  id="primaryPhone" 
+                  name="primary_phone"
+                  placeholder="10-digit mobile number"
+                  required
+                  pattern="[0-9]{10}"
+                  maxlength="10">
+                <span class="input-group-text"><i class="fas fa-phone"></i></span>
+              </div>
+              <small class="form-text text-muted">10 digits only (e.g., 9876543210)</small>
+              <div class="invalid-feedback">Valid 10-digit phone number required</div>
+            </div>
+
+            <!-- Alternative Phone Numbers -->
+            <div class="mb-3">
+              <label class="form-label">
+                <i class="fas fa-phone"></i> Additional Phone Numbers
+              </label>
+              <div id="phoneContainer">
+                <!-- Phone inputs will be added here dynamically -->
+              </div>
+              <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="addPhoneBtn">
+                <i class="fas fa-plus"></i> Add Phone Number
+              </button>
+            </div>
+
+            <!-- Address -->
+            <div class="mb-3">
+              <label for="address" class="form-label">
+                <i class="fas fa-map-marker-alt"></i> Address
+              </label>
+              <textarea 
+                class="form-control" 
+                id="address" 
+                name="address"
+                placeholder="Enter residential address"
+                rows="3"
+                maxlength="255"></textarea>
+            </div>
+
+            <!-- City, State, Country -->
+            <div class="row">
+              <div class="col-md-4 mb-3">
+                <label for="city" class="form-label">
+                  <i class="fas fa-city"></i> City
+                </label>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  id="city" 
+                  name="city"
+                  placeholder="e.g., Delhi, Mumbai"
+                  maxlength="50">
+              </div>
+              <div class="col-md-4 mb-3">
+                <label for="state" class="form-label">
+                  <i class="fas fa-map"></i> State/Province
+                </label>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  id="state" 
+                  name="state"
+                  placeholder="e.g., Delhi, Maharashtra"
+                  maxlength="50">
+              </div>
+              <div class="col-md-4 mb-3">
+                <label for="country" class="form-label">
+                  <i class="fas fa-globe"></i> Country
+                </label>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  id="country" 
+                  name="country"
+                  placeholder="e.g., India"
+                  maxlength="50">
+              </div>
+            </div>
+
+            <!-- Postal Code -->
+            <div class="mb-3">
+              <label for="postalCode" class="form-label">
+                <i class="fas fa-mailbox"></i> Postal Code
+              </label>
+              <input 
+                type="text" 
+                class="form-control" 
+                id="postalCode" 
+                name="postal_code"
+                placeholder="e.g., 110001"
+                maxlength="10">
+            </div>
+          </div>
+
+          <!-- ID Proof Section -->
+          <div class="mb-4">
+            <h6 class="text-primary mb-3"><i class="fas fa-id-card"></i> ID Proof</h6>
+            <hr>
+
+            <!-- ID Proof Type -->
+            <div class="mb-3">
+              <label for="idProofType" class="form-label">
+                <i class="fas fa-card-id"></i> ID Proof Type <span class="text-danger">*</span>
+              </label>
+              <select class="form-select" id="idProofType" name="id_proof_type" required>
+                <option value="">-- Select ID Type --</option>
+                <option value="Aadhar">Aadhar Card</option>
+                <option value="Passport">Passport</option>
+                <option value="DrivingLicense">Driving License</option>
+                <option value="VoterID">Voter ID</option>
+                <option value="PAN">PAN Card</option>
+                <option value="Other">Other</option>
+              </select>
+              <div class="invalid-feedback">ID proof type is required</div>
+            </div>
+
+            <!-- ID Number -->
+            <div class="mb-3">
+              <label for="idNumber" class="form-label">
+                <i class="fas fa-barcode"></i> ID Number <span class="text-danger">*</span>
+              </label>
+              <input 
+                type="text" 
+                class="form-control" 
+                id="idNumber" 
+                name="id_proof_number"
+                placeholder="Enter ID number"
+                required
+                minlength="6"
+                maxlength="50">
+              <small class="form-text text-muted">This information is kept confidential</small>
+              <div class="invalid-feedback">Valid ID number is required</div>
+            </div>
+
+            <!-- ID Issue Date & Expiry Date -->
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="idIssueDate" class="form-label">
+                  <i class="fas fa-calendar"></i> Issue Date
+                </label>
+                <input 
+                  type="date" 
+                  class="form-control" 
+                  id="idIssueDate" 
+                  name="id_issue_date">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="idExpiryDate" class="form-label">
+                  <i class="fas fa-calendar-times"></i> Expiry Date
+                </label>
+                <input 
+                  type="date" 
+                  class="form-control" 
+                  id="idExpiryDate" 
+                  name="id_expiry_date">
+              </div>
+            </div>
+          </div>
+
+          <!-- Emergency Contact Section -->
+          <div class="mb-4">
+            <h6 class="text-primary mb-3"><i class="fas fa-phone-square-alt"></i> Emergency Contact</h6>
+            <hr>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="emergencyName" class="form-label">
+                  <i class="fas fa-user"></i> Name
+                </label>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  id="emergencyName" 
+                  name="emergency_contact_name"
+                  placeholder="Emergency contact name"
+                  maxlength="50">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="emergencyRelation" class="form-label">
+                  <i class="fas fa-link"></i> Relation
+                </label>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  id="emergencyRelation" 
+                  name="emergency_relation"
+                  placeholder="e.g., Spouse, Parent"
+                  maxlength="30">
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="emergencyPhone" class="form-label">
+                <i class="fas fa-phone"></i> Contact Number
+              </label>
+              <input 
+                type="tel" 
+                class="form-control" 
+                id="emergencyPhone" 
+                name="emergency_contact_phone"
+                placeholder="10-digit phone number"
+                pattern="[0-9]{10}"
+                maxlength="10">
+            </div>
+          </div>
+
+          <!-- Additional Notes Section -->
+          <div class="mb-4">
+            <h6 class="text-primary mb-3"><i class="fas fa-sticky-note"></i> Additional Information</h6>
+            <hr>
+
+            <div class="mb-3">
+              <label for="notes" class="form-label">
+                <i class="fas fa-comment"></i> Special Requests / Notes
+              </label>
+              <textarea 
+                class="form-control" 
+                id="notes" 
+                name="special_notes"
+                placeholder="Any special requests or additional information"
+                rows="3"
+                maxlength="500"></textarea>
+            </div>
+
+            <!-- Terms & Conditions -->
+            <div class="form-check mb-3">
+              <input 
+                class="form-check-input" 
+                type="checkbox" 
+                id="agreeTerms" 
+                name="agree_terms"
+                required>
+              <label class="form-check-label" for="agreeTerms">
+                I confirm that the above information is correct and accurate
+              </label>
+              <div class="invalid-feedback">You must agree to the terms</div>
+            </div>
+          </div>
+
+          <!-- Form Actions -->
+          <div class="mb-3">
+            <button type="submit" class="btn btn-primary btn-lg me-2" id="submitBtn">
+              <i class="fas fa-save"></i> Register Guest
+            </button>
+            <a href="/guests" class="btn btn-secondary btn-lg">
+              <i class="fas fa-arrow-left"></i> Cancel
+            </a>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Help Card -->
+  <div class="col-lg-4">
+    <div class="card shadow mb-3">
+      <div class="card-header bg-info text-white">
+        <h6 class="mb-0"><i class="fas fa-info-circle"></i> Registration Tips</h6>
+      </div>
+      <div class="card-body">
+        <ul class="list-unstyled">
+          <li class="mb-2">
+            <strong>Required Fields:</strong>
+            <p class="text-muted small">Marked with red asterisk (*)</p>
+          </li>
+          <li class="mb-2">
+            <strong>Phone Numbers:</strong>
+            <p class="text-muted small">Use 10-digit format without spaces or dashes</p>
+          </li>
+          <li class="mb-2">
+            <strong>ID Proof:</strong>
+            <p class="text-muted small">Keep valid and non-expired identification</p>
+          </li>
+          <li class="mb-2">
+            <strong>Email:</strong>
+            <p class="text-muted small">Booking confirmations will be sent here</p>
+          </li>
+          <li class="mb-2">
+            <strong>Emergency Contact:</strong>
+            <p class="text-muted small">Important for guest safety</p>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card shadow">
+      <div class="card-header bg-success text-white">
+        <h6 class="mb-0"><i class="fas fa-check-circle"></i> Checklist</h6>
+      </div>
+      <div class="card-body">
+        <div class="form-check mb-2">
+          <input class="form-check-input" type="checkbox" id="check1">
+          <label class="form-check-label" for="check1">
+            Guest identity verified
+          </label>
+        </div>
+        <div class="form-check mb-2">
+          <input class="form-check-input" type="checkbox" id="check2">
+          <label class="form-check-label" for="check2">
+            Valid ID proof checked
+          </label>
+        </div>
+        <div class="form-check mb-2">
+          <input class="form-check-input" type="checkbox" id="check3">
+          <label class="form-check-label" for="check3">
+            Contact numbers verified
+          </label>
+        </div>
+        <div class="form-check mb-2">
+          <input class="form-check-input" type="checkbox" id="check4">
+          <label class="form-check-label" for="check4">
+            All information complete
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  let phoneCount = 0;
+  const maxPhones = 3;
+
+  // Add Phone Number Button
+  document.getElementById('addPhoneBtn').addEventListener('click', function() {
+    if (phoneCount < maxPhones) {
+      phoneCount++;
+      const phoneContainer = document.getElementById('phoneContainer');
+      
+      const phoneDiv = document.createElement('div');
+      phoneDiv.id = `phone_${phoneCount}`;
+      phoneDiv.className = 'input-group mb-2';
+      phoneDiv.innerHTML = `
+        <input type="tel" class="form-control" name="phone_${phoneCount}" 
+               placeholder="Alternative phone number" pattern="[0-9]{10}" maxlength="10">
+        <select class="form-select" name="phone_type_${phoneCount}" style="max-width: 120px;">
+          <option value="Mobile">Mobile</option>
+          <option value="Home">Home</option>
+          <option value="Work">Work</option>
+        </select>
+        <button class="btn btn-outline-danger" type="button" 
+                onclick="removePhone(${phoneCount})">
+          <i class="fas fa-trash"></i>
+        </button>
+      `;
+      
+      phoneContainer.appendChild(phoneDiv);
+    } else {
+      alert('Maximum 3 phone numbers allowed');
+    }
+  });
+
+  function removePhone(phoneNum) {
+    const phoneDiv = document.getElementById(`phone_${phoneNum}`);
+    if (phoneDiv) {
+      phoneDiv.remove();
+    }
+  }
+
+  // Form Validation
+  const form = document.getElementById('guestRegistrationForm');
+  form.addEventListener('submit', function(e) {
+    // Basic validation
+    const firstName = document.getElementById('firstName').value.trim();
+    const lastName = document.getElementById('lastName').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const primaryPhone = document.getElementById('primaryPhone').value.trim();
+    const idProofType = document.getElementById('idProofType').value;
+    const idNumber = document.getElementById('idNumber').value.trim();
+
+    if (!firstName || !lastName || !email || !primaryPhone || !idProofType || !idNumber) {
+      e.preventDefault();
+      alert('Please fill in all required fields');
+      return false;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      e.preventDefault();
+      alert('Please enter a valid email address');
+      return false;
+    }
+
+    // Phone validation
+    const phoneRegex = /^[0-9]{10}$/;
+    if (!phoneRegex.test(primaryPhone)) {
+      e.preventDefault();
+      alert('Primary phone must be 10 digits');
+      return false;
+    }
+
+    // Show loading state
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Registering...';
+
+    return true;
+  });
+
+  // Clear alerts after 5 seconds
+  document.querySelectorAll('.alert').forEach(alert => {
+    setTimeout(() => {
+      alert.style.display = 'none';
+    }, 5000);
+  });
+</script>
+{% endblock %}
+
+
+================================================
+HOW TO USE THIS REGISTER_GUEST.HTML
+================================================
+
+PLACEMENT:
+Place this file at: frontend/templates/guests/register_guest.html
+
+BACKEND ROUTE (app.py):
+=======================
+
+from flask import Flask, render_template, request, redirect, session, url_for
+import mysql.connector
+from datetime import datetime
+
+@app.route('/guests')
+def guests():
+    return render_template('guests/register_guest.html')
+
+@app.route('/api/guests/register', methods=['POST'])
+def register_guest():
+    try:
+        data = request.form
+        
+        # Validate required fields
+        required_fields = ['first_name', 'last_name', 'email', 'primary_phone', 
+                          'id_proof_type', 'id_proof_number']
+        for field in required_fields:
+            if not data.get(field):
+                session['error_message'] = f'{field} is required'
+                return redirect(url_for('guests'))
+        
+        # Connect to database
+        conn = mysql.connector.connect(
+            host='localhost',
+            user='root',
+            password='your_password',
+            database='hotel_management_system'
+        )
+        cursor = conn.cursor()
+        
+        # Insert guest
+        full_name = f"{data['first_name']} {data['last_name']}"
+        cursor.execute('''
+            INSERT INTO guest (name, email)
+            VALUES (%s, %s)
+        ''', (full_name, data['email']))
+        
+        guest_id = cursor.lastrowid
+        
+        # Insert primary phone
+        cursor.execute('''
+            INSERT INTO guest_phone (guest_id, phone, phone_type)
+            VALUES (%s, %s, 'Mobile')
+        ''', (guest_id, data['primary_phone']))
+        
+        # Insert additional phones if provided
+        for i in range(1, 4):
+            phone_key = f'phone_{i}'
+            if data.get(phone_key):
+                phone_type_key = f'phone_type_{i}'
+                cursor.execute('''
+                    INSERT INTO guest_phone (guest_id, phone, phone_type)
+                    VALUES (%s, %s, %s)
+                ''', (guest_id, data[phone_key], data.get(phone_type_key, 'Mobile')))
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        session['success_message'] = f'Guest {full_name} registered successfully! (ID: {guest_id})'
+        return redirect(url_for('guests'))
+    
+    except Exception as e:
+        session['error_message'] = f'Error registering guest: {str(e)}'
+        return redirect(url_for('guests'))

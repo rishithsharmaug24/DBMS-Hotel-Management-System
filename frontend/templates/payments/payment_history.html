@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+
+{% block title %}Payment History - Hotel Management System{% endblock %}
+
+{% block page_icon %}<i class="fas fa-history"></i>{% endblock %}
+{% block page_title %}Payment History{% endblock %}
+{% block page_subtitle %}
+  View all payment transactions and records
+{% endblock %}
+
+{% block breadcrumb %}
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
+    <li class="breadcrumb-item active">Payment History</li>
+  </ol>
+{% endblock %}
+
+{% block content %}
+
+<!-- Success/Error Messages -->
+{% if session.get('success_message') %}
+  <div class="alert alert-success alert-dismissible fade show" role="alert">
+    <i class="fas fa-check-circle"></i> {{ session.get('success_message') }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+{% endif %}
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+  <div class="col-md-3">
+    <div class="card text-center shadow-sm">
+      <div class="card-body">
+        <h6 class="text-muted mb-2">Total Payments</h6>
+        <h2 class="text-primary">{{ total_payments or '0' }}</h2>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center shadow-sm">
+      <div class="card-body">
+        <h6 class="text-muted mb-2">Total Amount</h6>
+        <h2 class="text-success">₹{{ total_amount or '0' }}</h2>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center shadow-sm">
+      <div class="card-body">
+        <h6 class="text-muted mb-2">Completed</h6>
+        <h2 class="text-success">{{ completed_count or '0' }}</h2>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center shadow-sm">
+      <div class="card-body">
+        <h6 class="text-muted mb-2">Pending</h6>
+        <h2 class="text-warning">{{ pending_count or '0' }}</h2>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="card shadow mb-4">
+  <div class="card-body">
+    <div class="row align-items-end">
+      <div class="col-md-3 mb-3 mb-md-0">
+        <label class="form-label">Search by Booking ID</label>
+        <input type="text" class="form-control" id="searchInput" placeholder="e.g., 101, 102..." onkeyup="filterPayments()">
+      </div>
+      <div class="col-md-3 mb-3 mb-md-0">
+        <label class="form-label">Payment Status</label>
+        <select class="form-select" id="statusFilter" onchange="filterPayments()">
+          <option value="">-- All Status --</option>
+          <option value="Completed">Completed</option>
+          <option value="Pending">Pending</option>
+          <option value="Failed">Failed</option>
+        </select>
+      </div>
+      <div class="col-md-3 mb-3 mb-md-0">
+        <label class="form-label">Payment Method</label>
+        <select class="form-select" id="methodFilter" onchange="filterPayments()">
+          <option value="">-- All Methods --</option>
+          <option value="Credit Card">Credit Card</option>
+          <option value="Debit Card">Debit Card</option>
+          <option value="UPI">UPI</option>
+          <option value="Cash">Cash</option>
+          <option value="Cheque">Cheque</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">&nbsp;</label>
+        <button class="btn btn-outline-secondary w-100" onclick="resetFilters()">
+          <i class="fas fa-redo"></i> Reset
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Payments Table -->
+<div class="card shadow">
+  <div class="card-header">
+    <h5 class="mb-0">Payment Records</h5>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0" id="paymentsTable">
+        <thead class="table-light">
+          <tr>
+            <th>Payment ID</th>
+            <th>Booking ID</th>
+            <th>Guest Name</th>
+            <th>Amount</th>
+            <th>Method</th>
+            <th>Status</th>
+            <th>Date</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if payments %}
+            {% for payment in payments %}
+              <tr class="payment-row" data-booking-id="{{ payment.booking_id }}" data-status="{{ payment.status }}" data-method="{{ payment.payment_method }}">
+                <td>
+                  <strong>#{{ payment.payment_id }}</strong>
+                </td>
+                <td>#{{ payment.booking_id }}</td>
+                <td>{{ payment.guest_name }}</td>
+                <td>
+                  <strong class="text-success">₹{{ payment.amount }}</strong>
+                </td>
+                <td>
+                  <span class="badge bg-info">{{ payment.payment_method }}</span>
+                </td>
+                <td>
+                  {% if payment.status == 'Completed' %}
+                    <span class="badge bg-success"><i class="fas fa-check-circle"></i> Completed</span>
+                  {% elif payment.status == 'Pending' %}
+                    <span class="badge bg-warning text-dark"><i class="fas fa-clock"></i> Pending</span>
+                  {% elif payment.status == 'Failed' %}
+                    <span class="badge bg-danger"><i class="fas fa-times-circle"></i> Failed</span>
+                  {% endif %}
+                </td>
+                <td>{{ payment.payment_date.strftime('%d %b %Y, %H:%M') }}</td>
+                <td>
+                  <div class="btn-group btn-group-sm" role="group">
+                    <a href="/payments/{{ payment.payment_id }}" class="btn btn-outline-primary" title="View">
+                      <i class="fas fa-eye"></i>
+                    </a>
+                    <a href="/payments/{{ payment.payment_id }}/receipt" class="btn btn-outline-info" title="Receipt">
+                      <i class="fas fa-receipt"></i>
+                    </a>
+                    {% if payment.status == 'Failed' %}
+                      <a href="/payments/{{ payment.payment_id }}/retry" class="btn btn-outline-warning" title="Retry">
+                        <i class="fas fa-redo"></i>
+                      </a>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="8" class="text-center text-muted py-4">
+                <i class="fas fa-inbox" style="font-size: 2rem; opacity: 0.3;"></i>
+                <p class="mt-2 mb-0">No payment records found</p>
+              </td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Pagination -->
+{% if total_pages > 1 %}
+  <nav aria-label="Payment history pagination" class="mt-4">
+    <ul class="pagination justify-content-center">
+      {% if current_page > 1 %}
+        <li class="page-item">
+          <a class="page-link" href="/payments/history?page=1">First</a>
+        </li>
+        <li class="page-item">
+          <a class="page-link" href="/payments/history?page={{ current_page - 1 }}">Previous</a>
+        </li>
+      {% endif %}
+
+      {% for page_num in range(max(1, current_page - 2), min(total_pages + 1, current_page + 3)) %}
+        {% if page_num == current_page %}
+          <li class="page-item active">
+            <span class="page-link">{{ page_num }}</span>
+          </li>
+        {% else %}
+          <li class="page-item">
+            <a class="page-link" href="/payments/history?page={{ page_num }}">{{ page_num }}</a>
+          </li>
+        {% endif %}
+      {% endfor %}
+
+      {% if current_page < total_pages %}
+        <li class="page-item">
+          <a class="page-link" href="/payments/history?page={{ current_page + 1 }}">Next</a>
+        </li>
+        <li class="page-item">
+          <a class="page-link" href="/payments/history?page={{ total_pages }}">Last</a>
+        </li>
+      {% endif %}
+    </ul>
+  </nav>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Filter payments
+  function filterPayments() {
+    const searchInput = document.getElementById('searchInput').value.toLowerCase();
+    const statusFilter = document.getElementById('statusFilter').value;
+    const methodFilter = document.getElementById('methodFilter').value;
+
+    const rows = document.querySelectorAll('.payment-row');
+    let visibleCount = 0;
+
+    rows.forEach(row => {
+      let show = true;
+
+      // Search filter
+      if (searchInput && !row.textContent.toLowerCase().includes(searchInput)) {
+        show = false;
+      }
+
+      // Status filter
+      if (statusFilter && row.dataset.status !== statusFilter) {
+        show = false;
+      }
+
+      // Method filter
+      if (methodFilter && row.dataset.method !== methodFilter) {
+        show = false;
+      }
+
+      row.style.display = show ? '' : 'none';
+      if (show) visibleCount++;
+    });
+
+    // Show no results message
+    if (visibleCount === 0) {
+      document.querySelector('.alert-info')?.style.display = 'block';
+    }
+  }
+
+  // Reset filters
+  function resetFilters() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('statusFilter').value = '';
+    document.getElementById('methodFilter').value = '';
+    filterPayments();
+  }
+
+  // Auto-dismiss alerts
+  document.querySelectorAll('.alert').forEach(alert => {
+    setTimeout(() => {
+      alert.style.display = 'none';
+    }, 5000);
+  });
+</script>
+{% endblock %}

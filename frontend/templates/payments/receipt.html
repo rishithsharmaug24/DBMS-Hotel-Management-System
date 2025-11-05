@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+
+{% block title %}Payment Receipt - Hotel Management System{% endblock %}
+
+{% block page_icon %}<i class="fas fa-receipt"></i>{% endblock %}
+{% block page_title %}Payment Receipt{% endblock %}
+{% block page_subtitle %}
+  Invoice and payment confirmation
+{% endblock %}
+
+{% block breadcrumb %}
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
+    <li class="breadcrumb-item"><a href="/payments/history">Payment History</a></li>
+    <li class="breadcrumb-item active">Receipt</li>
+  </ol>
+{% endblock %}
+
+{% block content %}
+
+<!-- Receipt Container -->
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    
+    <!-- Receipt Card -->
+    <div class="card shadow" id="receiptCard">
+      
+      <!-- Header -->
+      <div class="card-header bg-primary text-white text-center py-4">
+        <h2 class="mb-1">
+          <i class="fas fa-receipt"></i> RECEIPT
+        </h2>
+        <p class="mb-0 text-white-50">Payment Confirmation</p>
+      </div>
+
+      <!-- Body -->
+      <div class="card-body" style="background-color: #f8f9fa;">
+
+        <!-- Hotel Info -->
+        <div class="row mb-4 pb-3 border-bottom">
+          <div class="col-md-6">
+            <h6 class="text-muted">Hotel Information</h6>
+            <p class="mb-1"><strong>{{ hotel_name }}</strong></p>
+            <p class="mb-1">{{ hotel_address }}</p>
+            <p class="mb-0">{{ hotel_city }}, {{ hotel_state }} {{ hotel_postal }}</p>
+          </div>
+          <div class="col-md-6 text-md-end">
+            <h6 class="text-muted">Receipt Details</h6>
+            <p class="mb-1"><strong>Receipt #:</strong> {{ payment.payment_id }}</p>
+            <p class="mb-1"><strong>Date:</strong> {{ payment.payment_date.strftime('%d %b %Y') }}</p>
+            <p class="mb-0"><strong>Time:</strong> {{ payment.payment_date.strftime('%H:%M:%S') }}</p>
+          </div>
+        </div>
+
+        <!-- Guest Info -->
+        <div class="row mb-4 pb-3 border-bottom">
+          <div class="col-md-6">
+            <h6 class="text-muted">Guest Information</h6>
+            <p class="mb-1"><strong>Name:</strong> {{ booking.guest_name }}</p>
+            <p class="mb-1"><strong>Email:</strong> {{ booking.guest_email }}</p>
+            <p class="mb-0"><strong>Phone:</strong> {{ booking.guest_phone }}</p>
+          </div>
+          <div class="col-md-6">
+            <h6 class="text-muted">Booking Information</h6>
+            <p class="mb-1"><strong>Booking ID:</strong> #{{ booking.booking_id }}</p>
+            <p class="mb-1"><strong>Room:</strong> {{ booking.room_number }} ({{ booking.room_type }})</p>
+            <p class="mb-0"><strong>Duration:</strong> {{ booking.check_in_date.strftime('%d %b %Y') }} to {{ booking.check_out_date.strftime('%d %b %Y') }}</p>
+          </div>
+        </div>
+
+        <!-- Bill Details -->
+        <div class="mb-4">
+          <h6 class="text-muted mb-3">Bill Summary</h6>
+          <table class="table table-sm">
+            <tbody>
+              <tr>
+                <td><strong>Room Charges</strong></td>
+                <td class="text-end"><strong>₹{{ room_charges }}</strong></td>
+              </tr>
+              {% if service_charges %}
+                <tr>
+                  <td><strong>Service Charges</strong></td>
+                  <td class="text-end"><strong>₹{{ service_charges }}</strong></td>
+                </tr>
+              {% endif %}
+              {% if taxes %}
+                <tr>
+                  <td><strong>Taxes & Fees</strong></td>
+                  <td class="text-end"><strong>₹{{ taxes }}</strong></td>
+                </tr>
+              {% endif %}
+              {% if discount %}
+                <tr class="table-success">
+                  <td><strong>Discount</strong></td>
+                  <td class="text-end"><strong>-₹{{ discount }}</strong></td>
+                </tr>
+              {% endif %}
+              <tr class="table-primary">
+                <td><strong>Total Amount</strong></td>
+                <td class="text-end"><strong>₹{{ payment.amount }}</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Payment Details -->
+        <div class="row mb-4 pb-3 border-bottom">
+          <div class="col-md-6">
+            <h6 class="text-muted">Payment Information</h6>
+            <p class="mb-1"><strong>Method:</strong> {{ payment.payment_method }}</p>
+            <p class="mb-1"><strong>Status:</strong> 
+              {% if payment.status == 'Completed' %}
+                <span class="badge bg-success">Completed</span>
+              {% elif payment.status == 'Pending' %}
+                <span class="badge bg-warning text-dark">Pending</span>
+              {% elif payment.status == 'Failed' %}
+                <span class="badge bg-danger">Failed</span>
+              {% endif %}
+            </p>
+            <p class="mb-0"><strong>Transaction ID:</strong> {{ payment.transaction_id or 'N/A' }}</p>
+          </div>
+          <div class="col-md-6">
+            <h6 class="text-muted">Payment Breakdown</h6>
+            <p class="mb-1"><strong>Paid Amount:</strong> ₹{{ payment.amount }}</p>
+            {% if payment.status == 'Completed' %}
+              <p class="mb-0 text-success"><strong><i class="fas fa-check-circle"></i> Payment Successful</strong></p>
+            {% else %}
+              <p class="mb-0 text-warning"><strong><i class="fas fa-clock"></i> Payment Pending</strong></p>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Payment Terms -->
+        <div class="alert alert-info" role="alert">
+          <i class="fas fa-info-circle"></i> 
+          <strong>Receipt Notice:</strong> This is an electronically generated receipt. No signature is required.
+        </div>
+
+        <!-- Terms -->
+        <div class="mb-4 p-3 bg-light rounded">
+          <h6 class="text-muted mb-2">Terms & Conditions</h6>
+          <p class="small mb-0">
+            • Payment has been received as per the booking terms and conditions.<br>
+            • This receipt is valid for the booking mentioned above.<br>
+            • For any queries regarding this transaction, please contact the hotel reception.<br>
+            • Keep this receipt for future reference.
+          </p>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center pt-3 border-top">
+          <p class="text-muted small mb-0">Thank you for staying with us!</p>
+          <p class="text-muted small">Generated on {{ generated_date.strftime('%d %b %Y at %H:%M:%S') }}</p>
+        </div>
+
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="card-footer bg-light">
+        <div class="d-flex gap-2 justify-content-center">
+          <button class="btn btn-primary" onclick="printReceipt()">
+            <i class="fas fa-print"></i> Print Receipt
+          </button>
+          <button class="btn btn-info" onclick="downloadReceipt()">
+            <i class="fas fa-download"></i> Download PDF
+          </button>
+          <a href="/bookings/{{ booking.booking_id }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Booking
+          </a>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Print receipt
+  function printReceipt() {
+    window.print();
+  }
+
+  // Download receipt as PDF (requires jsPDF library)
+  function downloadReceipt() {
+    // This requires jsPDF and html2canvas libraries
+    const element = document.getElementById('receiptCard');
+    const opt = {
+      margin: 10,
+      filename: 'payment_receipt_{{ payment.payment_id }}.pdf',
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
+    };
+    
+    // Using html2pdf library
+    html2pdf().set(opt).from(element).save();
+  }
+
+  // Print styling
+  const style = document.createElement('style');
+  style.textContent = `
+    @media print {
+      .btn, nav, .breadcrumb, .card-footer {
+        display: none !important;
+      }
+      #receiptCard {
+        box-shadow: none !important;
+      }
+      body {
+        background-color: white;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+</script>
+{% endblock %}
