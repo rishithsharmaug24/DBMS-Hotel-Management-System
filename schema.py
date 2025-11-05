@@ -89,26 +89,26 @@ class BookingBase(BaseModel):
     check_in_date: date
     check_out_date: date
     status: str = "Confirmed"
-    
-    @field_validator('check_out_date')
-    @classmethod
-    def validate_dates(cls, v, info):
-        if 'check_in_date' in info.data and v <= info.data['check_in_date']:
-            raise ValueError('check_out_date must be after check_in_date')
-        return v
 
 class BookingCreate(BookingBase):
     pass
 
+class BookingUpdate(BaseModel):
+    status: Optional[str] = None
+    check_in_date: Optional[date] = None
+    check_out_date: Optional[date] = None
+
 class BookingResponse(BookingBase):
     booking_id: int
     booking_date: date
-    total_amount: Decimal
     created_at: datetime
     updated_at: datetime
     
     class Config:
         from_attributes = True
+
+class BookingWithTotal(BookingResponse):
+    total_amount: Optional[Decimal] = None
 
 
 # Payment Schemas
