@@ -4,6 +4,13 @@ from sqlalchemy.orm import Session
 from typing import List
 from datetime import date
 
+import importlib
+import sys
+
+# Force reload schemas module
+if 'schemas' in sys.modules:
+    importlib.reload(sys.modules['schemas'])
+    
 import models, schemas, crud
 from database import engine, get_db
 from config import settings
