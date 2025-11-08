@@ -8,8 +8,7 @@ DROP TRIGGER IF EXISTS trg_su_after_delete;
 DROP TRIGGER IF EXISTS trg_room_after_update;
 DROP TRIGGER IF EXISTS trg_service_after_update;
 
-DELIMITER $$
-
+-- Trigger 1
 CREATE TRIGGER trg_room_status_update
 AFTER UPDATE ON booking
 FOR EACH ROW
@@ -21,8 +20,9 @@ BEGIN
         ELSE status
     END
     WHERE room_id = NEW.room_id;
-END$$
+END;
 
+-- Trigger 2
 CREATE TRIGGER trg_booking_status_checkin
 BEFORE UPDATE ON booking
 FOR EACH ROW
@@ -33,8 +33,9 @@ BEGIN
             SET MESSAGE_TEXT = 'Cannot check in before check-in date';
         END IF;
     END IF;
-END$$
+END;
 
+-- Trigger 3
 CREATE TRIGGER trg_booking_status_checkout
 BEFORE UPDATE ON booking
 FOR EACH ROW
@@ -45,8 +46,9 @@ BEGIN
             SET MESSAGE_TEXT = 'Cannot check out before check-out date';
         END IF;
     END IF;
-END$$
+END;
 
+-- Trigger 4
 CREATE TRIGGER trg_validate_dates_before_insert
 BEFORE INSERT ON booking
 FOR EACH ROW
@@ -55,13 +57,14 @@ BEGIN
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'Check-out date must be after check-in date';
     END IF;
-    
+
     IF NEW.check_in_date < CURDATE() THEN
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'Check-in date cannot be in the past';
     END IF;
-END$$
+END;
 
+-- Trigger 5
 CREATE TRIGGER trg_validate_dates_before_update
 BEFORE UPDATE ON booking
 FOR EACH ROW
@@ -70,6 +73,4 @@ BEGIN
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'Check-out date must be after check-in date';
     END IF;
-END$$
-
-DELIMITER ;
+END;

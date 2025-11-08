@@ -90,9 +90,10 @@ def setup_database():
     ]
     
     # First connect without database to create it
-    initial_url = f"mysql+pymysql://{settings.DB_USER}:{settings.DB_PASSWORD}@{settings.DB_HOST}:{settings.DB_PORT}"
+    initial_url = "mysql+pymysql://root:1q%212w%403e%234r%245t%25@localhost:3306/hotel_management_system"
+
     initial_engine = create_engine(initial_url)
-    
+
     try:
         with initial_engine.connect() as conn:
             # Execute database.sql to create database

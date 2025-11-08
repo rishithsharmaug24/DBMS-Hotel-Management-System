@@ -69,3 +69,6 @@ INSERT INTO service_usage (booking_id, service_id, quantity) VALUES
 (2, 3, 1),
 (2, 4, 2),
 (3, 5, 1);
+
+
+
