@@ -2,666 +2,212 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Staff Login - Hotel Management System</title>
-    
-    <!-- Bootstrap 5 CSS -->
+    <meta name="viewport" content="width=1280, initial-scale=1.0">
+    <title>Login - Hotel Management System</title>
+
+    <!-- Bootstrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    
-    <!-- Font Awesome Icons -->
+    <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
     <style>
-        :root {
-            --primary-color: #007bff;
-            --secondary-color: #6c757d;
-            --success-color: #28a745;
-            --danger-color: #dc3545;
-            --warning-color: #ffc107;
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        html, body {
-            height: 100%;
-            font-family: 'Poppins', sans-serif;
-        }
-        
+        /* ===== GENERAL ===== */
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #3a0ca3, #7209b7, #4361ee);
+            height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            min-height: 100vh;
-            padding: 20px;
-        }
-        
-        /* ===== LOGIN CONTAINER ===== */
-        .login-container {
-            width: 100%;
-            max-width: 450px;
-        }
-        
-        /* ===== LOGIN CARD ===== */
-        .login-card {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            color: #333;
             overflow: hidden;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
-        
-        .login-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
+
+        /* ===== CARD ===== */
+        .login-card {
+            width: 420px;
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+            animation: fadeIn 0.6s ease-in-out;
         }
-        
-        /* ===== LOGIN HEADER ===== */
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== HEADER ===== */
         .login-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 40px 20px;
+            background: linear-gradient(135deg, #3a0ca3, #7209b7, #4361ee);
+            padding: 35px 0;
             text-align: center;
+            color: #fff;
         }
-        
-        .hotel-logo {
-            width: 80px;
-            height: 80px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 20px;
-            font-size: 2.5rem;
-            color: white;
-            transition: all 0.3s ease;
+
+        .login-header i {
+            font-size: 3.2rem;
+            margin-bottom: 10px;
         }
-        
-        .hotel-logo:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: scale(1.05);
-        }
-        
-        .login-header h1 {
-            font-size: 1.8rem;
+
+        .login-header h2 {
             font-weight: 700;
-            margin-bottom: 5px;
-            color: white;
+            font-size: 1.7rem;
+            margin-bottom: 6px;
         }
-        
+
         .login-header p {
-            font-size: 0.95rem;
-            opacity: 0.9;
-            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.9rem;
+            color: #dcdcdc;
         }
-        
-        /* ===== LOGIN BODY ===== */
+
+        /* ===== FORM BODY ===== */
         .login-body {
-            padding: 40px 30px;
+            padding: 35px;
         }
-        
-        /* ===== FORM GROUP ===== */
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
+
         .form-label {
             font-weight: 600;
             color: #333;
-            margin-bottom: 10px;
-            font-size: 0.95rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
         }
-        
-        .form-label i {
-            color: var(--primary-color);
-            font-size: 1.1rem;
-        }
-        
-        /* ===== INPUT FIELDS ===== */
+
         .form-control {
-            border: 2px solid #e0e0e0;
             border-radius: 8px;
-            padding: 12px 15px;
+            padding: 10px 12px;
             font-size: 0.95rem;
-            transition: all 0.3s ease;
-            background-color: #f9f9f9;
         }
-        
+
         .form-control:focus {
-            border-color: var(--primary-color);
-            background-color: white;
-            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.15);
-            outline: none;
+            border-color: #7209b7;
+            box-shadow: 0 0 0 0.2rem rgba(114, 9, 183, 0.25);
         }
-        
-        .form-control::placeholder {
-            color: #999;
-        }
-        
-        /* ===== PASSWORD TOGGLE ===== */
-        .password-input-group {
-            position: relative;
-        }
-        
-        .password-toggle-btn {
-            position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
+
+        .input-group-text {
+            background-color: #f0f0f0;
             border: none;
-            color: #999;
-            cursor: pointer;
-            padding: 5px 10px;
-            font-size: 1.1rem;
-            transition: all 0.3s ease;
-            z-index: 10;
         }
-        
-        .password-toggle-btn:hover {
-            color: var(--primary-color);
-        }
-        
-        .form-control[type="password"] + .password-toggle-btn {
-            padding-right: 15px;
-        }
-        
-        /* ===== REMEMBER ME & FORGOT PASSWORD ===== */
-        .form-check {
-            margin-bottom: 20px;
-        }
-        
-        .form-check-input {
-            border: 2px solid #ddd;
-            border-radius: 4px;
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        
-        .form-check-input:checked {
-            background-color: var(--primary-color);
-            border-color: var(--primary-color);
-        }
-        
-        .form-check-input:focus {
-            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-        }
-        
-        .form-check-label {
-            color: #555;
-            font-weight: 500;
-            cursor: pointer;
-            margin-left: 8px;
-            margin-bottom: 0;
-        }
-        
-        .forgot-password-link {
-            float: right;
-            margin-bottom: 20px;
-        }
-        
-        .forgot-password-link a {
-            color: var(--primary-color);
-            text-decoration: none;
-            font-weight: 500;
-            font-size: 0.9rem;
-            transition: all 0.3s ease;
-        }
-        
-        .forgot-password-link a:hover {
-            color: #764ba2;
-            text-decoration: underline;
-        }
-        
-        /* ===== LOGIN BUTTON ===== */
+
+        /* ===== BUTTON ===== */
         .btn-login {
+            background: linear-gradient(135deg, #3a0ca3, #7209b7, #4361ee);
+            border: none;
+            color: #fff;
+            font-weight: 600;
+            border-radius: 8px;
+            padding: 12px;
             width: 100%;
-            padding: 12px 20px;
+            transition: all 0.3s ease;
             font-size: 1rem;
-            font-weight: 600;
-            border: none;
-            border-radius: 8px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
         }
-        
+
         .btn-login:hover {
+            background: linear-gradient(135deg, #480ca8, #560bad, #4cc9f0);
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
         }
-        
-        .btn-login:active {
-            transform: translateY(0);
-        }
-        
-        .btn-login:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-        
-        /* ===== LOADING SPINNER ===== */
-        .spinner-border {
-            width: 1rem;
-            height: 1rem;
-            border-width: 0.25em;
-            margin-right: 8px;
-        }
-        
-        /* ===== ERROR/SUCCESS ALERTS ===== */
-        .alert {
-            border: none;
-            border-radius: 8px;
-            padding: 12px 16px;
-            margin-bottom: 20px;
-            font-size: 0.95rem;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            animation: slideDown 0.3s ease;
-        }
-        
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        .alert-danger {
-            background-color: #f8d7da;
-            color: #721c24;
-            border-left: 4px solid #dc3545;
-        }
-        
-        .alert-success {
-            background-color: #d4edda;
-            color: #155724;
-            border-left: 4px solid #28a745;
-        }
-        
-        .alert-warning {
-            background-color: #fff3cd;
-            color: #856404;
-            border-left: 4px solid #ffc107;
-        }
-        
-        .alert-info {
-            background-color: #d1ecf1;
-            color: #0c5460;
-            border-left: 4px solid #17a2b8;
-        }
-        
-        .alert-close {
-            cursor: pointer;
-            opacity: 0.7;
-            transition: opacity 0.3s ease;
-        }
-        
-        .alert-close:hover {
-            opacity: 1;
-        }
-        
-        /* ===== LOGIN FOOTER ===== */
-        .login-footer {
-            text-align: center;
-            padding: 20px 30px;
-            background-color: #f9f9f9;
-            border-top: 1px solid #e0e0e0;
-        }
-        
-        .login-footer p {
-            color: #666;
+
+        /* ===== CHECKBOX ===== */
+        .form-check-label {
             font-size: 0.9rem;
-            margin-bottom: 0;
+            color: #555;
         }
-        
-        .login-footer a {
-            color: var(--primary-color);
-            text-decoration: none;
-            font-weight: 600;
-            transition: all 0.3s ease;
+
+        /* ===== ALERTS ===== */
+        .alert {
+            border-radius: 8px;
         }
-        
-        .login-footer a:hover {
-            color: #764ba2;
-            text-decoration: underline;
-        }
-        
-        /* ===== HINTS/HELP TEXT ===== */
-        .form-hint {
+
+        /* ===== DEMO CREDENTIALS ===== */
+        .demo-credentials {
+            background-color: #f1f3f5;
+            border-radius: 8px;
+            padding: 10px;
             font-size: 0.85rem;
-            color: #999;
-            margin-top: 5px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
+            text-align: center;
+            margin-top: 15px;
+            color: #555;
+            border: 1px solid #dee2e6;
         }
-        
-        .form-hint i {
-            font-size: 0.8rem;
-            color: var(--primary-color);
+
+        .demo-credentials b {
+            color: #3a0ca3;
         }
-        
-        /* ===== ROLE BADGE ===== */
-        .role-badge {
-            display: inline-block;
-            background-color: #e7f1ff;
-            color: var(--primary-color);
-            padding: 4px 10px;
-            border-radius: 20px;
+
+        /* ===== FOOTER ===== */
+        .login-footer {
+            background-color: #f8f9fa;
+            text-align: center;
+            padding: 15px;
             font-size: 0.85rem;
-            font-weight: 600;
-            margin-top: 10px;
-        }
-        
-        /* ===== RESPONSIVE DESIGN ===== */
-        @media (max-width: 576px) {
-            body {
-                padding: 10px;
-            }
-            
-            .login-card {
-                border-radius: 8px;
-            }
-            
-            .login-header {
-                padding: 30px 15px;
-            }
-            
-            .login-header h1 {
-                font-size: 1.5rem;
-            }
-            
-            .login-body {
-                padding: 25px 20px;
-            }
-            
-            .hotel-logo {
-                width: 60px;
-                height: 60px;
-                font-size: 2rem;
-            }
-        }
-        
-        /* ===== DARK MODE (OPTIONAL) ===== */
-        @media (prefers-color-scheme: dark) {
-            .login-card {
-                background: #1e1e1e;
-            }
-            
-            .form-control {
-                background-color: #2d2d2d;
-                border-color: #444;
-                color: #fff;
-            }
-            
-            .form-control:focus {
-                background-color: #333;
-                border-color: #667eea;
-            }
-            
-            .form-label {
-                color: #e0e0e0;
-            }
-            
-            .login-footer {
-                background-color: #2d2d2d;
-                border-top-color: #444;
-            }
-            
-            .login-footer p {
-                color: #999;
-            }
+            color: #6c757d;
+            border-top: 1px solid #dee2e6;
         }
     </style>
 </head>
+
 <body>
-    <div class="login-container">
-        <div class="login-card">
-            
-            <!-- ===== HEADER ===== -->
-            <div class="login-header">
-                <div class="hotel-logo">
-                    <i class="fas fa-hotel"></i>
+    <div class="login-card">
+        <!-- HEADER -->
+        <div class="login-header">
+            <i class="fas fa-hotel"></i>
+            <h2>Hotel Management System</h2>
+            <p>Internal Staff Portal</p>
+        </div>
+
+        <!-- BODY -->
+        <div class="login-body">
+            {% if error %}
+                <div class="alert alert-danger" role="alert">
+                    <i class="fas fa-exclamation-circle me-2"></i> {{ error }}
                 </div>
-                <h1>Hotel Management</h1>
-                <p>Internal Admin System</p>
-            </div>
-            
-            <!-- ===== BODY ===== -->
-            <div class="login-body">
-                
-                <!-- Error Messages -->
-                {% if error %}
-                    <div class="alert alert-danger">
-                        <i class="fas fa-exclamation-circle"></i>
-                        <span>{{ error }}</span>
-                        <i class="fas fa-times alert-close" onclick="this.parentElement.style.display='none';"></i>
-                    </div>
-                {% endif %}
-                
-                <!-- Success Messages -->
-                {% if success %}
-                    <div class="alert alert-success">
-                        <i class="fas fa-check-circle"></i>
-                        <span>{{ success }}</span>
-                        <i class="fas fa-times alert-close" onclick="this.parentElement.style.display='none';"></i>
-                    </div>
-                {% endif %}
-                
-                <!-- Warning Messages -->
-                {% if warning %}
-                    <div class="alert alert-warning">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <span>{{ warning }}</span>
-                        <i class="fas fa-times alert-close" onclick="this.parentElement.style.display='none';"></i>
-                    </div>
-                {% endif %}
-                
-                <!-- LOGIN FORM -->
-                <form id="loginForm" method="POST" action="/login" novalidate>
-                    
-                    <!-- CSRF Token (Security) -->
-                    {% if csrf_token %}
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    {% endif %}
-                    
-                    <!-- Username/Email Field -->
-                    <div class="form-group">
-                        <label for="username" class="form-label">
-                            <i class="fas fa-user"></i>
-                            Username or Email
-                        </label>
-                        <input 
-                            type="text" 
-                            class="form-control" 
-                            id="username" 
-                            name="username"
-                            placeholder="Enter your username or email"
-                            required
-                            autocomplete="username"
-                            aria-label="Username or Email">
-                        <div class="form-hint">
-                            <i class="fas fa-info-circle"></i>
-                            Enter your staff username or email address
-                        </div>
-                    </div>
-                    
-                    <!-- Password Field -->
-                    <div class="form-group">
-                        <label for="password" class="form-label">
-                            <i class="fas fa-lock"></i>
-                            Password
-                        </label>
-                        <div class="password-input-group">
-                            <input 
-                                type="password" 
-                                class="form-control" 
-                                id="password" 
-                                name="password"
-                                placeholder="Enter your password"
-                                required
-                                autocomplete="current-password"
-                                aria-label="Password">
-                            <button 
-                                type="button" 
-                                class="password-toggle-btn" 
-                                id="passwordToggle"
-                                onclick="togglePasswordVisibility()"
-                                aria-label="Toggle password visibility"
-                                tabindex="-1">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                        </div>
-                        <div class="form-hint">
-                            <i class="fas fa-info-circle"></i>
-                            Your password is case-sensitive
-                        </div>
-                    </div>
-                    
-                    <!-- Remember Me Checkbox -->
-                    <div class="form-check">
-                        <input 
-                            class="form-check-input" 
-                            type="checkbox" 
-                            id="rememberMe" 
-                            name="remember_me"
-                            value="yes">
-                        <label class="form-check-label" for="rememberMe">
-                            Remember me for 30 days
-                        </label>
-                    </div>
-                    
-                    <!-- Forgot Password Link -->
-                    <div class="forgot-password-link">
-                        <a href="/forgot-password">Forgot Password?</a>
-                    </div>
-                    
-                    <!-- Login Button -->
-                    <button 
-                        type="submit" 
-                        class="btn-login"
-                        id="loginBtn">
-                        <i class="fas fa-sign-in-alt"></i>
-                        Sign In to Your Account
-                    </button>
-                    
-                </form>
-                
-                <!-- Additional Info -->
-                <div style="margin-top: 20px; padding: 15px; background-color: #f0f7ff; border-radius: 8px; border-left: 4px solid var(--primary-color);">
-                    <p style="font-size: 0.9rem; color: #0c5460; margin: 0;">
-                        <i class="fas fa-info-circle" style="color: var(--primary-color); margin-right: 8px;"></i>
-                        <strong>Demo Credentials:</strong><br>
-                        <small>Username: admin | Password: admin123</small>
-                    </p>
+            {% endif %}
+
+            <form method="POST" action="{{ url_for('route_login') }}">
+                <div class="mb-3">
+                    <label for="username" class="form-label"><i class="fas fa-user me-2 text-primary"></i>Username</label>
+                    <input type="text" name="username" id="username" class="form-control" placeholder="Enter username" required>
                 </div>
-                
-            </div>
-            
-            <!-- ===== FOOTER ===== -->
-            <div class="login-footer">
-                <p>
-                    Don't have an account? 
-                    <a href="/contact-admin">Contact Administrator</a>
-                </p>
-                <p style="font-size: 0.85rem; color: #999; margin-top: 10px;">
-                    &copy; 2025 Hotel Management System. All rights reserved.
-                </p>
-            </div>
-            
+
+                <div class="mb-3">
+                    <label for="password" class="form-label"><i class="fas fa-lock me-2 text-primary"></i>Password</label>
+                    <div class="input-group">
+                        <input type="password" name="password" id="password" class="form-control" placeholder="Enter password" required>
+                        <span class="input-group-text" id="togglePassword" style="cursor: pointer;"><i class="fas fa-eye"></i></span>
+                    </div>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input type="checkbox" class="form-check-input" id="rememberMe">
+                    <label class="form-check-label" for="rememberMe">Remember me</label>
+                </div>
+
+                <button type="submit" class="btn-login">
+                    <i class="fas fa-sign-in-alt me-2"></i> Sign In
+                </button>
+
+                <div class="demo-credentials mt-3">
+                    <i class="fas fa-info-circle me-2"></i> Demo Credentials — <b>admin / admin123</b>
+                </div>
+            </form>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="login-footer">
+            &copy; 2025 Hotel Management System | NSUT Delhi
         </div>
     </div>
-    
-    <!-- ===== JAVASCRIPT ===== -->
+
+    <!-- TOGGLE PASSWORD JS -->
     <script>
-        // Toggle Password Visibility
-        function togglePasswordVisibility() {
-            const passwordField = document.getElementById('password');
-            const toggleBtn = document.getElementById('passwordToggle');
-            
-            if (passwordField.type === 'password') {
-                passwordField.type = 'text';
-                toggleBtn.innerHTML = '<i class="fas fa-eye-slash"></i>';
-                toggleBtn.setAttribute('aria-label', 'Hide password');
-            } else {
-                passwordField.type = 'password';
-                toggleBtn.innerHTML = '<i class="fas fa-eye"></i>';
-                toggleBtn.setAttribute('aria-label', 'Show password');
-            }
-        }
-        
-        // Form Validation
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
-            const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value;
-            
-            // Client-side validation
-            if (!username) {
-                e.preventDefault();
-                alert('Please enter your username or email');
-                document.getElementById('username').focus();
-                return false;
-            }
-            
-            if (!password) {
-                e.preventDefault();
-                alert('Please enter your password');
-                document.getElementById('password').focus();
-                return false;
-            }
-            
-            if (password.length < 6) {
-                e.preventDefault();
-                alert('Password must be at least 6 characters');
-                return false;
-            }
-            
-            // Disable button during submission
-            const loginBtn = document.getElementById('loginBtn');
-            loginBtn.disabled = true;
-            loginBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>Signing In...';
-            
-            return true;
-        });
-        
-        // Auto-close alerts after 5 seconds
-        document.querySelectorAll('.alert').forEach(alert => {
-            setTimeout(() => {
-                if (alert) {
-                    alert.style.display = 'none';
-                }
-            }, 5000);
-        });
-        
-        // Focus management
-        document.addEventListener('DOMContentLoaded', function() {
-            const username = document.getElementById('username');
-            if (username) {
-                username.focus();
-            }
+        const togglePassword = document.querySelector('#togglePassword');
+        const password = document.querySelector('#password');
+        togglePassword.addEventListener('click', () => {
+            const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+            password.setAttribute('type', type);
+            togglePassword.querySelector('i').classList.toggle('fa-eye-slash');
         });
     </script>
 </body>

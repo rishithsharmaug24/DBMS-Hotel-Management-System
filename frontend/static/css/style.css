@@ -1,4 +1,5 @@
-/* style.css - base tokens & utilities */
+/* style.css - base tokens & utilities (updated with font variable) */
+
 :root{
   --bg:#F6F7FB;
   --surface:#FFFFFF;
@@ -10,9 +11,19 @@
   --card-shadow: 0 8px 24px rgba(11,34,64,0.06);
   --radius:10px;
   --max-w:1200px;
+  --font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
+
+/* base utilities */
 *{box-sizing:border-box}
-html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;color:var(--primary);background:var(--bg);-webkit-font-smoothing:antialiased}
+html,body{
+  height:100%;
+  margin:0;
+  font-family: var(--font-family);
+  color:var(--primary);
+  background:var(--bg);
+  -webkit-font-smoothing:antialiased;
+}
 a{color:inherit}
 .container{max-width:var(--max-w);margin:0 auto;padding:22px}
 
@@ -32,7 +43,7 @@ a{color:inherit}
 /* Profile */
 .profile-dropdown{display:flex;align-items:center;gap:10px;position:relative}
 .avatar{width:38px;height:38px;border-radius:999px;object-fit:cover;border:2px solid #fff}
-.profile-info{display:none} /* simple; keep only avatar for compressed nav */
+.profile-info{display:none}
 .profile-menu{position:absolute;right:0;top:56px;background:var(--surface);box-shadow:var(--card-shadow);border-radius:8px;overflow:hidden;display:none}
 .profile-menu a{display:block;padding:10px 12px;border-bottom:1px solid #F1F5F9}
 
@@ -72,4 +83,4 @@ a{color:inherit}
 
 /* Toast */
 .toast-container{position:fixed;right:18px;bottom:18px;display:flex;flex-direction:column;gap:8px;z-index:3000}
-.toast{background:#0B2240;color:#fff;padding:10px 14px;border-radius:8px;box-shadow:var(--card-shadow)}
+.toast{background:var(--primary);color:#fff;padding:10px 14px;border-radius:8px;box-shadow:var(--card-shadow)}

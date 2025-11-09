@@ -1,6 +1,8 @@
-/* forms.css - clean form styles */
-.form-row{display:flex;gap:12px}
-.form-row .field{flex:1}
-label.required::after{content:" *";color:var(--danger)}
-.input-help{font-size:13px;color:var(--muted);margin-top:6px}
-.form-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:12px}
+/* forms.css - clean form styles (small improvements) */
+
+.form-row { display:flex; gap:12px; flex-wrap:wrap; }
+.form-row .field { flex:1; min-width:180px; }
+
+label.required::after { content: " *"; color: var(--danger); margin-left:2px; font-weight:700; }
+.input-help { font-size:13px; color: var(--muted); margin-top:6px; display:block; }
+.form-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:12px; flex-wrap:wrap; }

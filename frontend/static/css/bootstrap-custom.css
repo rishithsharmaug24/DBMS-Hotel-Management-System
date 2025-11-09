@@ -1,0 +1,7 @@
+/* bootstrap-custom.css - minimal bootstrap overrides for consistency */
+
+.btn { font-family: inherit; }
+.table td, .table th { vertical-align: middle; }
+
+/* small accessibility tweaks */
+a:focus { outline: 3px solid rgba(11,34,64,0.12); outline-offset: 2px; }

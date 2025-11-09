@@ -1,10 +1,13 @@
 /* dashboard.css - grid & charts area */
-.dashboard-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-@media (max-width:1000px){ .dashboard-grid{grid-template-columns:repeat(2,1fr)} }
-@media (max-width:660px){ .dashboard-grid{grid-template-columns:1fr} }
 
-.kpi-card{display:flex;flex-direction:column;gap:10px}
-.kpi-small{display:flex;gap:12px;align-items:center}
+.dashboard-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+@media (max-width: 1000px) { .dashboard-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 660px)  { .dashboard-grid { grid-template-columns: 1fr; } }
 
-.recent-bookings table{width:100%}
-.chart-placeholder{height:200px;border-radius:8px;background:linear-gradient(90deg,#FBFBFF,#FFF)}
+.kpi-card { display:flex; flex-direction:column; gap:10px; }
+.kpi-small { display:flex; gap:12px; align-items:center; }
+
+.recent-bookings table { width:100%; border-collapse: collapse; }
+.recent-bookings table th, .recent-bookings table td { padding: 10px; border-bottom: 1px solid #EEF1F5; }
+
+.chart-placeholder { height:200px; border-radius:8px; background: linear-gradient(90deg,#FBFBFF,#FFF); display:flex; align-items:center; justify-content:center; color: #B1BFD6; }

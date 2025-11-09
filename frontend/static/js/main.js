@@ -1,40 +1,71 @@
-/* main.js - small runtime utilities & include loader */
-(async function(){
-  // load server-side includes (if served static, this will load fragments)
-  async function include(selector, path){
-    const el = document.querySelector(selector);
-    if(!el) return;
-    try{
-      const res = await fetch(path);
-      if(res.ok){ el.innerHTML = await res.text(); }
-    }catch(e){}
+/* main.js - initialization and small UI helpers
+   This file should be loaded last (after helpers).
+*/
+
+(function () {
+  "use strict";
+
+  function initNavHighlight() {
+    try {
+      const path = window.location.pathname;
+      document.querySelectorAll('.nav-link, .sidebar-menu a').forEach(link => {
+        const href = link.getAttribute('href');
+        if (!href) return;
+        try {
+          if (path === href || (href !== '/' && path.startsWith(href))) {
+            link.classList.add('active');
+          }
+        } catch (e) {}
+      });
+    } catch (e) {}
   }
 
-  // auto load includes if placeholders exist
-  await include('#include-navbar', '/includes/navbar.html');
-  await include('#include-sidebar', '/includes/sidebar.html');
-  await include('#include-footer', '/includes/footer.html');
-  await include('#include-modals', '/includes/modals.html');
+  // load HTML includes for static preview (optional - will fail when server-side includes are used)
+  function loadIncludes() {
+    // Only run when page is served as static files; if using Flask server-side includes, skip
+    const canFetch = typeof fetch === 'function' && window.location.protocol.startsWith('http');
+    if (!canFetch) return;
+    const includeTargets = document.querySelectorAll('[data-include-path]');
+    includeTargets.forEach(async (el) => {
+      const path = el.getAttribute('data-include-path');
+      if (!path) return;
+      try {
+        const res = await fetch(path);
+        if (res.ok) {
+          el.innerHTML = await res.text();
+        }
+      } catch (e) {
+        // ignore
+      }
+    });
+  }
 
-  // small init
-  document.getElementById('year')?.innerText = new Date().getFullYear();
+  // simple form demo prevention (for static preview)
+  function preventEmptyFormSubmits() {
+    document.querySelectorAll('form').forEach(form => {
+      form.addEventListener('submit', (e) => {
+        // if action is '#' or empty, prevent actual navigation
+        const action = form.getAttribute('action') || '#';
+        if (action === '#' || action.trim() === '') {
+          e.preventDefault();
+          toast('Form submission intercepted (static preview).', 'info', 2000);
+        }
+      });
+    });
+  }
 
-  // toast helper
-  window.toast = function(msg, type='info', timeout=3500){
-    const container = document.getElementById('toastContainer') || document.createElement('div');
-    container.id = 'toastContainer'; container.className = 'toast-container';
-    if(!document.body.contains(container)) document.body.appendChild(container);
-    const t = document.createElement('div'); t.className = 'toast'; t.innerText = msg;
-    container.appendChild(t);
-    setTimeout(()=>t.remove(), timeout);
-  };
-
-  // small event: global search
-  document.addEventListener('click', e => {
-    if(e.target && e.target.id === 'btnSearch'){
-      const q = document.getElementById('topSearch').value.trim();
-      if(q) window.location.href = '/search.html?q=' + encodeURIComponent(q);
-    }
+  // run on DOMContentLoaded
+  document.addEventListener('DOMContentLoaded', () => {
+    initNavHighlight();
+    loadIncludes();
+    preventEmptyFormSubmits();
+    // attach a simple global error handler for development
+    window.addEventListener('error', function (evt) {
+      console.error('JS Error:', evt.message, 'at', evt.filename + ':' + evt.lineno);
+    });
   });
 
+  // expose small helpers (if needed)
+  window.initNavHighlight = initNavHighlight;
+  window.loadIncludes = loadIncludes;
 })();

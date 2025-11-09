@@ -3,6 +3,7 @@ USE hotel_management_system;
 DROP VIEW IF EXISTS booking_service_line;
 DROP VIEW IF EXISTS booking_totals;
 
+-- Detailed per-service cost for each booking
 CREATE VIEW booking_service_line AS
 SELECT 
     su.booking_id,
@@ -14,6 +15,7 @@ SELECT
 FROM service_usage su
 JOIN service s ON su.service_id = s.service_id;
 
+-- Summary of each booking (room + services total)
 CREATE VIEW booking_totals AS
 SELECT 
     b.booking_id,
@@ -21,10 +23,10 @@ SELECT
     b.room_id,
     b.check_in_date,
     b.check_out_date,
-    (GREATEST(DATEDIFF(b.check_out_date, b.check_in_date), 0) * r.price_per_night) AS room_total,
+    GREATEST(DATEDIFF(b.check_out_date, b.check_in_date), 0) * r.price_per_night AS room_total,
     COALESCE(SUM(s.price * su.quantity), 0) AS services_total,
-    (GREATEST(DATEDIFF(b.check_out_date, b.check_in_date), 0) * r.price_per_night)
-    + COALESCE(SUM(s.price * su.quantity), 0) AS booking_total
+    GREATEST(DATEDIFF(b.check_out_date, b.check_in_date), 0) * r.price_per_night
+        + COALESCE(SUM(s.price * su.quantity), 0) AS booking_total
 FROM booking b
 JOIN room r ON b.room_id = r.room_id
 LEFT JOIN service_usage su ON b.booking_id = su.booking_id
