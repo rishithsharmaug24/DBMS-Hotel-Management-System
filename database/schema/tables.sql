@@ -15,7 +15,7 @@ DROP TABLE IF EXISTS hotel;
 -- HOTEL
 -- ===============================
 CREATE TABLE hotel (
-    hotel_id INT NOT NULL AUTO_INCREMENT,
+    hotel_id INT NOT NULL,
     name VARCHAR(150) NOT NULL,
     city VARCHAR(100) NOT NULL,
     address VARCHAR(255),
